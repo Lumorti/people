@@ -1,0 +1,110 @@
+ <!DOCTYPE html>
+<html>
+
+<style>
+
+	#wrapper {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 100%;
+		height: 100%;
+		max-width: 700px;
+		max-height: 700px;
+		-webkit-transform: translate(-50%, -50%);
+		transform: translate(-50%, -50%);
+	}
+	
+	#main {
+		width: 100%;
+		height: 100%;
+		border: 5px solid black;
+	}
+
+</style>
+
+<script>
+
+	// Arrays holding the preloaded SVGs
+	var peopleSVGs = [];
+	var objectSVGs = [];
+	var roomSVGs = [];
+	var peopleSVG = new Image();
+	var objectsSVG = new Image();
+	var placesSVG = new Image();
+
+	// SVG sizings
+	var placeLoc = [0, 0, 500, 250];
+	var objectLoc = [0, 0, 100, 100];
+	var peopleLoc = [0, 0, 100, 100];
+	var placeWidth = 0;
+	var placeHeight = 0;
+
+	// Timings
+	var lastRender = 0;
+
+	// DOM objects
+	var canvasObj;
+	var ctx;
+
+	// Called when the page loads
+	function init() {
+
+		// Preload the SVGs
+		peopleSVG.onload = function(){};
+		peopleSVG.src = "people.svg";
+		objectsSVG.onload = function(){};
+		objectsSVG.src = "objects.svg";
+		placesSVG.onload = function(){};
+		placesSVG.src = "places.svg";
+
+		// Get the canvas
+		canvas = document.getElementById("main");
+		canvas.width = canvas.offsetWidth;
+		canvas.height = canvas.offsetHeight;
+		ctx = canvas.getContext("2d");
+
+		// Start the loop
+		window.requestAnimationFrame(loop);
+
+	}
+
+	function update(progress) {
+
+
+	}
+
+	function draw() {
+
+		// Draw the background
+		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, canvas.width, canvas.width*(placesSVG.height/placesSVG.width));
+
+	}
+
+	// Function calling itself to endlessly loop
+	function loop(timestamp) {
+
+		// How much time has passed
+		var progress = timestamp - lastRender;
+
+		// Update everything
+		update(progress);
+
+		// Re-render everything
+		draw();
+
+		// Call the loop again when possible
+		lastRender = timestamp;
+		window.requestAnimationFrame(loop);
+
+	}
+
+</script>
+
+<body onload="init();">
+	<div id="wrapper">
+		<canvas id="main"/>
+	</div>
+</body>
+
+</html> 
