@@ -25,10 +25,7 @@
 
 <script>
 
-	// Arrays holding the preloaded SVGs
-	var peopleSVGs = [];
-	var objectSVGs = [];
-	var roomSVGs = [];
+	// Objects holding the preloaded SVGs
 	var peopleSVG = new Image();
 	var objectsSVG = new Image();
 	var placesSVG = new Image();
@@ -40,6 +37,32 @@
 	var placeWidth = 0;
 	var placeHeight = 0;
 
+	// For converting
+	var toRad = Math.PI / 180.0;
+	var toDeg = 180.0 / Math.PI;
+
+	// Poses 
+	// [neck, lArmUpper, lArmLower, rArmUpper, rArmLower, 
+    //  lLegUpper, lLegLower, rLegUpper, rLegLower]
+	poses = {
+		"standing":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
+		"holding":      [0,  0, -90, 0, 0,   0,   0,   0,   0, 0],
+		"drinking":     [0,-20, -90, 0, 0,   0,   0,   0,   0, 0],
+		"walkTran":     [0,  0,   0, 0, 0, -30,  30,   0,   0, 0],
+		"walk1":        [0,  0,   0, 0, 0, -45,  30,  10,  10, 0],
+		"walk2":        [0,  0,   0, 0, 0, -30,   5,  30,  20, 0],
+		"walk3":        [0,  0,   0, 0, 0,  10,   5, -30,  30, 0],
+		"walk4":        [0,  0,   0, 0, 0,  10,  30, -10,  10, 0],
+		"walkHoldTran": [0,  0, -90, 0, 0, -30,  30,   0,   0, 0],
+		"walkHold1":    [0,  0, -90, 0, 0, -45,  30,  10,  10, 0],
+		"walkHold2":    [0,  0, -90, 0, 0, -30,   5,  30,  20, 0],
+		"walkHold3":    [0,  0, -90, 0, 0,  10,   5, -30,  30, 0],
+		"walkHold4":    [0,  0, -90, 0, 0,  10,  30, -10,  10, 0],
+		"sat":          [0,  0, -20, 0, 0, -60,  30, -60,  30, 0],
+		"satHold":      [0,  0, -90, 0, 0, -60,  30, -60,  30, 0],
+		"satDrinking":  [0,-20, -90, 0, 0, -60,  30, -60,  30, 0],
+	};
+
 	// Timings
 	var lastRender = 0;
 
@@ -47,15 +70,18 @@
 	var canvasObj;
 	var ctx;
 
+	// Keep track of all the people
+	var people = [];
+
 	// Called when the page loads
 	function init() {
 
 		// Preload the SVGs
-		peopleSVG.onload = function(){};
+		peopleSVG.onload = function() {};
 		peopleSVG.src = "people.svg";
-		objectsSVG.onload = function(){};
+		objectsSVG.onload = function() {};
 		objectsSVG.src = "objects.svg";
-		placesSVG.onload = function(){};
+		placesSVG.onload = function() {};
 		placesSVG.src = "places.svg";
 
 		// Get the canvas
@@ -63,21 +89,231 @@
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
 		ctx = canvas.getContext("2d");
+		ctx.scale(1.5, 1.5);
 
 		// Start the loop
 		window.requestAnimationFrame(loop);
 
+		// The template to copy for each person
+		var personTemplate = {"sprite": 0, 
+							  "loc": 100, 
+							  "x": 100, 
+							  "y": 133, 
+							  "angles": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+							  "pose": "standing", 
+							  "destinationLoc": 100, 
+							  "boredom": 0, 
+							  "drinkLeft": 0, 
+							  "bladder": 0, 
+							  "conversationID": -1, 
+							  "holding": -1, 
+							  "action": "standing"};
+
+		// Add a test person
+		people.push(Object.assign({}, personTemplate));
+
 	}
 
+	// Update the various people
 	function update(progress) {
 
+		// Check if people are ready for new actions
+		for (var i=0; i<people.length; i++) {
+
+			// If the person is bored of their current action
+			if (people[i].boredom >= 100) {
+
+				// If drink is empty
+				if (people[i].holding != -1 && people[i].drinkLeft <= 0) {
+					people[i].destinationLoc = 500;
+					people[i].action = "goingToBin";
+
+				// If need to pee
+				} else if (people[i].bladder >= 100) {
+					people[i].destinationLoc = 100;
+					people[i].action = "goingToBathroom";
+
+				// If don't have a drink
+				} else if (people[i].holding == -1) {
+					people[i].destinationLoc = 460;
+					people[i].action = "goingToFridge";
+
+				// Choose a conversation to join
+				} else {
+
+				}
+
+				// No longer bored
+				people[i].boredom = 0;
+
+			// Otherwise they get a bit more bored
+			} else {
+				people[i].boredom += 1;
+			}
+
+			// Move their X
+			if (people[i].loc > people[i].destinationLoc) {
+				people[i].loc -= 1.0;
+			} else if (people[i].loc < people[i].destinationLoc) {
+				people[i].loc += 1.0;
+			}
+
+			// Update Y based on X
+			if (people[i].loc > 440) {
+				people[i].x = people[i].loc-240;
+				people[i].y = 340;
+			} else {
+				people[i].x = people[i].loc;
+				people[i].y = 133;
+			}
+
+			// Move towards their pose
+			var maxDelta = -1000;
+			for (var j=0; j<10; j++) {
+				var delta = poses[people[i].pose][j] - people[i].angles[j];
+				maxDelta = Math.max(Math.abs(delta), maxDelta);
+				if (delta > 1) {
+					people[i].angles[j] += 1.0;
+				} else if (delta < 1) {
+					people[i].angles[j] -= 1.0;
+				}
+			}
+
+			console.log(people[i].pose, people[i].action);
+
+			// See if the pose needs changing
+			if (maxDelta < 2){
+
+				// Stopping walking
+				if      (people[i].action == "standing" && people[i].pose != "standing") {people[i].pose = "standing";}
+				else if (people[i].action == "holding" && people[i].pose != "holding") {people[i].pose = "holding";}
+
+				// Walk cycle
+				else if (people[i].pose == "walk1") {people[i].pose = "walk2";}
+				else if (people[i].pose == "walk2") {people[i].pose = "walk3";}
+				else if (people[i].pose == "walk3") {people[i].pose = "walk4";}
+				else if (people[i].pose == "walk4") {people[i].pose = "walk1";}
+
+				// Walk cycle whilst holding something
+				else if (people[i].pose == "walkHold1") {people[i].pose = "walkHold2";}
+				else if (people[i].pose == "walkHold2") {people[i].pose = "walkHold3";}
+				else if (people[i].pose == "walkHold3") {people[i].pose = "walkHold4";}
+				else if (people[i].pose == "walkHold4") {people[i].pose = "walkHold1";}
+
+				// Starting to walk
+				else if (people[i].pose == "standing" && people[i].action == "goingToFridge") {people[i].pose = "walkTran";}
+				else if (people[i].pose == "walkTran") {people[i].pose = "walk1";}
+				else if (people[i].pose == "walkHoldTran") {people[i].pose = "walkHold1";}
+
+			}
+
+			// If reached the destination
+			if (people[i].loc == people[i].destinationLoc) {
+
+				// If getting a drink
+				if (people[i].action == "goingToFridge") {
+					people[i].holding = 0;
+					people[i].drinkLeft = 100;
+					people[i].action = "holding";
+					people[i].boredom = 80;
+
+				// If binning something
+				} else if (people[i].action == "goingToBin") {
+					people[i].holding = -1;
+					people[i].action = "standing";
+					people[i].boredom = 80;
+
+				}
+
+			}
+
+		}
 
 	}
 
 	function draw() {
 
+		// Clear the canvas
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
 		// Draw the background
-		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, canvas.width, canvas.width*(placesSVG.height/placesSVG.width));
+		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width, placesSVG.height);
+
+		// Draw the people
+		for (var i=0; i<people.length; i++) {
+
+			// Overall/torso rotation
+			ctx.translate(people[i].x, people[i].y);
+			ctx.rotate(people[i].angles[9]*toRad);
+
+			// Right arm
+			ctx.translate(9, -30);
+			ctx.rotate(people[i].angles[3]*toRad);
+			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.translate(2, 20);
+			ctx.rotate(people[i].angles[4]*toRad);
+			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.rotate(-people[i].angles[4]*toRad);
+			ctx.translate(-2, -20);
+			ctx.rotate(-people[i].angles[3]*toRad);
+			ctx.translate(-9, 30);
+			
+			// Right leg
+			ctx.translate(6, 3);
+			ctx.rotate(people[i].angles[7]*toRad);
+			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.translate(1, 25);
+			ctx.rotate(people[i].angles[8]*toRad);
+			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.rotate(-people[i].angles[8]*toRad);
+			ctx.translate(-1, -25);
+			ctx.rotate(-people[i].angles[7]*toRad);
+			ctx.translate(-6, -3);
+
+			// Torso
+			ctx.drawImage(peopleSVG, peopleLoc[2],   people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+
+			// Head
+			ctx.translate(0, -40);
+			ctx.rotate(people[i].angles[0]*toRad);
+			ctx.drawImage(peopleSVG, 0,              people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.rotate(-people[i].angles[0]*toRad);
+			ctx.translate(0, 40);
+
+			// Left leg
+			ctx.translate(-6, 3);
+			ctx.rotate(people[i].angles[5]*toRad);
+			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.translate(1, 25);
+			ctx.rotate(people[i].angles[6]*toRad);
+			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.rotate(-people[i].angles[6]*toRad);
+			ctx.translate(-1, -25);
+			ctx.rotate(-people[i].angles[5]*toRad);
+			ctx.translate(6, -3);
+
+			// Left arm
+			ctx.translate(-11, -30);
+			ctx.rotate(people[i].angles[1]*toRad);
+			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.translate(1, 20);
+			ctx.rotate(people[i].angles[2]*toRad);
+			if (people[i].holding >= 0) {
+				ctx.translate(0, 22);
+				ctx.drawImage(objectsSVG, 0, people[i].holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
+				ctx.translate(0, -22);
+			}
+			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+			ctx.rotate(-people[i].angles[2]*toRad);
+			ctx.translate(-1, -20);
+			ctx.rotate(-people[i].angles[1]*toRad);
+			ctx.translate(11, 30);
+
+			// Undo torso rotation
+			ctx.rotate(-people[i].angles[9]*toRad);
+			ctx.translate(-people[i].x, -people[i].y);
+
+		}
 
 	}
 
