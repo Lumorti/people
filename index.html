@@ -48,11 +48,11 @@
 		"standing":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
 		"holding":      [0,  0, -90, 0, 0,   0,   0,   0,   0, 0],
 		"drinking":     [0,-20, -90, 0, 0,   0,   0,   0,   0, 0],
-		"walkTran":     [0,  0,   0, 0, 0, -30,  30,   0,   0, 0],
-		"walk1":        [0,  0,   0, 0, 0, -45,  30,  10,  10, 0],
-		"walk2":        [0,  0,   0, 0, 0, -30,   5,  30,  20, 0],
-		"walk3":        [0,  0,   0, 0, 0,  10,   5, -30,  30, 0],
-		"walk4":        [0,  0,   0, 0, 0,  10,  30, -10,  10, 0],
+		"walkTran":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
+		"walk1":        [0,  0,   0, 0, 0, -30,  40,  10,   5, 0],
+		"walk2":        [0,  0,   0, 0, 0, -20,  10,  20,  10, 0],
+		"walk3":        [0,  0,   0, 0, 0,  10,  10, -35,  35, 0],
+		"walk4":        [0,  0,   0, 0, 0,  10,  10, -20,  10, 0],
 		"walkHoldTran": [0,  0, -90, 0, 0, -30,  30,   0,   0, 0],
 		"walkHold1":    [0,  0, -90, 0, 0, -45,  30,  10,  10, 0],
 		"walkHold2":    [0,  0, -90, 0, 0, -30,   5,  30,  20, 0],
@@ -72,6 +72,9 @@
 
 	// Keep track of all the people
 	var people = [];
+
+	// For DEBUGging
+	var debugText = "";
 
 	// Called when the page loads
 	function init() {
@@ -100,17 +103,73 @@
 							  "x": 100, 
 							  "y": 133, 
 							  "angles": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+							  "angleDeltas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
 							  "pose": "standing", 
 							  "destinationLoc": 100, 
 							  "boredom": 0, 
 							  "drinkLeft": 0, 
+							  "fixedPose": false, 
+							  "fixedLoc": false, 
 							  "bladder": 0, 
 							  "conversationID": -1, 
 							  "holding": -1, 
 							  "action": "standing"};
 
 		// Add a test person
-		people.push(Object.assign({}, personTemplate));
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+
+		// Walk cycle testing TODO
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 50;
+		people[people.length-1].loc = people[people.length-1].x;
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 100;
+		people[people.length-1].loc = people[people.length-1].x;
+		for (var j=0; j<10; j++) {
+			people[people.length-1].angles[j] = poses["walkTran"][j];
+		}
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 150;
+		people[people.length-1].loc = people[people.length-1].x;
+		for (var j=0; j<10; j++) {
+			people[people.length-1].angles[j] = poses["walk1"][j];
+		}
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 200;
+		people[people.length-1].loc = people[people.length-1].x;
+		for (var j=0; j<10; j++) {
+			people[people.length-1].angles[j] = poses["walk2"][j];
+		}
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 250;
+		people[people.length-1].loc = people[people.length-1].x;
+		for (var j=0; j<10; j++) {
+			people[people.length-1].angles[j] = poses["walk3"][j];
+		}
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedPose = true;
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 300;
+		people[people.length-1].loc = people[people.length-1].x;
+		for (var j=0; j<10; j++) {
+			people[people.length-1].angles[j] = poses["walk4"][j];
+		}
+
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
+		people[people.length-1].fixedLoc = true;
+		people[people.length-1].x = 400;
+		people[people.length-1].loc = people[people.length-1].x;
+		people[people.length-1].destinationLoc = people[people.length-1].loc;
 
 	}
 
@@ -151,77 +210,90 @@
 				people[i].boredom += 1;
 			}
 
-			// Move their X
-			if (people[i].loc > people[i].destinationLoc) {
-				people[i].loc -= 1.0;
-			} else if (people[i].loc < people[i].destinationLoc) {
-				people[i].loc += 1.0;
-			}
+			// DEBUG
+			if (!people[i].fixedLoc){
 
-			// Update Y based on X
-			if (people[i].loc > 440) {
-				people[i].x = people[i].loc-240;
-				people[i].y = 340;
-			} else {
-				people[i].x = people[i].loc;
-				people[i].y = 133;
-			}
-
-			// Move towards their pose
-			var maxDelta = -1000;
-			for (var j=0; j<10; j++) {
-				var delta = poses[people[i].pose][j] - people[i].angles[j];
-				maxDelta = Math.max(Math.abs(delta), maxDelta);
-				if (delta > 1) {
-					people[i].angles[j] += 1.0;
-				} else if (delta < 1) {
-					people[i].angles[j] -= 1.0;
+				// Move their X
+				if (people[i].loc > people[i].destinationLoc) {
+					people[i].loc -= 1.0;
+				} else if (people[i].loc < people[i].destinationLoc) {
+					people[i].loc += 1.0;
 				}
-			}
 
-			console.log(people[i].pose, people[i].action);
-
-			// See if the pose needs changing
-			if (maxDelta < 2){
-
-				// Stopping walking
-				if      (people[i].action == "standing" && people[i].pose != "standing") {people[i].pose = "standing";}
-				else if (people[i].action == "holding" && people[i].pose != "holding") {people[i].pose = "holding";}
-
-				// Walk cycle
-				else if (people[i].pose == "walk1") {people[i].pose = "walk2";}
-				else if (people[i].pose == "walk2") {people[i].pose = "walk3";}
-				else if (people[i].pose == "walk3") {people[i].pose = "walk4";}
-				else if (people[i].pose == "walk4") {people[i].pose = "walk1";}
-
-				// Walk cycle whilst holding something
-				else if (people[i].pose == "walkHold1") {people[i].pose = "walkHold2";}
-				else if (people[i].pose == "walkHold2") {people[i].pose = "walkHold3";}
-				else if (people[i].pose == "walkHold3") {people[i].pose = "walkHold4";}
-				else if (people[i].pose == "walkHold4") {people[i].pose = "walkHold1";}
-
-				// Starting to walk
-				else if (people[i].pose == "standing" && people[i].action == "goingToFridge") {people[i].pose = "walkTran";}
-				else if (people[i].pose == "walkTran") {people[i].pose = "walk1";}
-				else if (people[i].pose == "walkHoldTran") {people[i].pose = "walkHold1";}
+				// Update Y based on X
+				if (people[i].loc > 440) {
+					people[i].x = people[i].loc-240;
+					people[i].y = 340;
+				} else {
+					people[i].x = people[i].loc;
+					people[i].y = 133;
+				}
 
 			}
 
-			// If reached the destination
-			if (people[i].loc == people[i].destinationLoc) {
+			if (!people[i].fixedPose){
 
-				// If getting a drink
-				if (people[i].action == "goingToFridge") {
-					people[i].holding = 0;
-					people[i].drinkLeft = 100;
-					people[i].action = "holding";
-					people[i].boredom = 80;
+				// Move towards their pose
+				var maxDelta = -1000;
+				for (var j=0; j<10; j++) {
+					var delta = poses[people[i].pose][j] - people[i].angles[j];
+					maxDelta = Math.max(Math.abs(delta), maxDelta);
+					if (Math.abs(delta) > 1){
+						people[i].angles[j] += people[i].angleDeltas[j];
+					}
+				}
 
-				// If binning something
-				} else if (people[i].action == "goingToBin") {
-					people[i].holding = -1;
-					people[i].action = "standing";
-					people[i].boredom = 80;
+				// See if the pose needs changing
+				if (Math.abs(maxDelta) < 3){
+
+					// Save the old pose
+					var oldPose = people[i].pose;
+
+					// Stopping walking
+					if      (people[i].action == "standing" && people[i].pose != "standing") {people[i].pose = "standing";}
+					else if (people[i].action == "holding" && people[i].pose != "holding") {people[i].pose = "holding";}
+
+					// Walk cycle
+					else if (people[i].pose == "walk1") {people[i].pose = "walk2";}
+					else if (people[i].pose == "walk2") {people[i].pose = "walk3";}
+					else if (people[i].pose == "walk3") {people[i].pose = "walk4";}
+					else if (people[i].pose == "walk4") {people[i].pose = "walk1";}
+
+					// Walk cycle whilst holding something
+					else if (people[i].pose == "walkHold1") {people[i].pose = "walkHold2";}
+					else if (people[i].pose == "walkHold2") {people[i].pose = "walkHold3";}
+					else if (people[i].pose == "walkHold3") {people[i].pose = "walkHold4";}
+					else if (people[i].pose == "walkHold4") {people[i].pose = "walkHold1";}
+
+					// Starting to walk
+					else if (people[i].pose == "standing" && people[i].action == "goingToFridge") {people[i].pose = "walkTran";}
+					else if (people[i].pose == "walkTran") {people[i].pose = "walk1";}
+					else if (people[i].pose == "walkHoldTran") {people[i].pose = "walkHold1";}
+
+					// Calculate the delta needed each frame between these poses
+					for (var j=0; j<10; j++) {
+						people[i].angleDeltas[j] = (poses[people[i].pose][j] - poses[oldPose][j]) / 20.0;
+					}
+
+				}
+
+				// If reached the destination
+				if (people[i].loc == people[i].destinationLoc) {
+
+					// If getting a drink
+					if (people[i].action == "goingToFridge") {
+						people[i].holding = 0;
+						people[i].drinkLeft = 100;
+						people[i].action = "holding";
+						people[i].boredom = 80;
+
+					// If binning something
+					} else if (people[i].action == "goingToBin") {
+						people[i].holding = -1;
+						people[i].action = "standing";
+						people[i].boredom = 80;
+
+					}
 
 				}
 
@@ -315,6 +387,9 @@
 
 		}
 
+		// Write the DEBUG text
+		ctx.font = "30px Arial";
+		ctx.fillText(debugText, 10, 450);
 	}
 
 	// Function calling itself to endlessly loop
