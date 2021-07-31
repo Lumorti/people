@@ -47,17 +47,17 @@
 	poses = {
 		"standing":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
 		"holding":      [0,  0, -90, 0, 0,   0,   0,   0,   0, 0],
-		"drinking":     [0,-20, -90, 0, 0,   0,   0,   0,   0, 0],
+		"drinking":     [0,-50,-100, 0, 0,   0,   0,   0,   0, 0],
 		"walkTran":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
 		"walk1":        [0,  0,   0, 0, 0, -30,  40,  10,   5, 0],
 		"walk2":        [0,  0,   0, 0, 0, -20,  10,  20,  10, 0],
 		"walk3":        [0,  0,   0, 0, 0,  10,  10, -35,  35, 0],
 		"walk4":        [0,  0,   0, 0, 0,  10,  10, -20,  10, 0],
 		"walkHoldTran": [0,  0, -90, 0, 0, -30,  30,   0,   0, 0],
-		"walkHold1":    [0,  0, -90, 0, 0, -45,  30,  10,  10, 0],
-		"walkHold2":    [0,  0, -90, 0, 0, -30,   5,  30,  20, 0],
-		"walkHold3":    [0,  0, -90, 0, 0,  10,   5, -30,  30, 0],
-		"walkHold4":    [0,  0, -90, 0, 0,  10,  30, -10,  10, 0],
+		"walkHold1":    [0,  0,   0, 0, 0, -30,  40,  10,   5, 0],
+		"walkHold2":    [0,  0,   0, 0, 0, -20,  10,  20,  10, 0],
+		"walkHold3":    [0,  0,   0, 0, 0,  10,  10, -35,  35, 0],
+		"walkHold4":    [0,  0,   0, 0, 0,  10,  10, -20,  10, 0],
 		"sat":          [0,  0, -20, 0, 0, -60,  30, -60,  30, 0],
 		"satHold":      [0,  0, -90, 0, 0, -60,  30, -60,  30, 0],
 		"satDrinking":  [0,-20, -90, 0, 0, -60,  30, -60,  30, 0],
@@ -72,6 +72,11 @@
 
 	// Keep track of all the people
 	var people = [];
+
+	// Possible conversation locations
+	var conversations = [
+		{"people": [], "locs": [300, 350, 400]}, // Sofa and chairs
+	];
 
 	// For DEBUGging
 	var debugText = "";
@@ -110,66 +115,67 @@
 							  "drinkLeft": 0, 
 							  "fixedPose": false, 
 							  "fixedLoc": false, 
+							  "facingRight": true, 
 							  "bladder": 0, 
-							  "conversationID": -1, 
+							  "drinkTimer": 0, 
+							  "conversationInd": -1, 
 							  "holding": -1, 
 							  "action": "standing"};
 
 		// Add a test person
-		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		people.push(JSON.parse(JSON.stringify(personTemplate)));
 
 		// Walk cycle testing TODO
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 50;
-		people[people.length-1].loc = people[people.length-1].x;
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 100;
-		people[people.length-1].loc = people[people.length-1].x;
-		for (var j=0; j<10; j++) {
-			people[people.length-1].angles[j] = poses["walkTran"][j];
-		}
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 150;
-		people[people.length-1].loc = people[people.length-1].x;
-		for (var j=0; j<10; j++) {
-			people[people.length-1].angles[j] = poses["walk1"][j];
-		}
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 200;
-		people[people.length-1].loc = people[people.length-1].x;
-		for (var j=0; j<10; j++) {
-			people[people.length-1].angles[j] = poses["walk2"][j];
-		}
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 250;
-		people[people.length-1].loc = people[people.length-1].x;
-		for (var j=0; j<10; j++) {
-			people[people.length-1].angles[j] = poses["walk3"][j];
-		}
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedPose = true;
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 300;
-		people[people.length-1].loc = people[people.length-1].x;
-		for (var j=0; j<10; j++) {
-			people[people.length-1].angles[j] = poses["walk4"][j];
-		}
-
-		people.push(JSON.parse(JSON.stringify(personTemplate)));
-		people[people.length-1].fixedLoc = true;
-		people[people.length-1].x = 400;
-		people[people.length-1].loc = people[people.length-1].x;
-		people[people.length-1].destinationLoc = people[people.length-1].loc;
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 50;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 100;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*for (var j=0; j<10; j++) {*/
+			/*people[people.length-1].angles[j] = poses["walkTran"][j];*/
+		/*}*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 150;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*for (var j=0; j<10; j++) {*/
+			/*people[people.length-1].angles[j] = poses["walk1"][j];*/
+		/*}*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 200;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*for (var j=0; j<10; j++) {*/
+			/*people[people.length-1].angles[j] = poses["walk2"][j];*/
+		/*}*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 250;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*for (var j=0; j<10; j++) {*/
+			/*people[people.length-1].angles[j] = poses["walk3"][j];*/
+		/*}*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedPose = true;*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 300;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*for (var j=0; j<10; j++) {*/
+			/*people[people.length-1].angles[j] = poses["walk4"][j];*/
+		/*}*/
+		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+		/*people[people.length-1].fixedLoc = true;*/
+		/*people[people.length-1].x = 400;*/
+		/*people[people.length-1].loc = people[people.length-1].x;*/
+		/*people[people.length-1].destinationLoc = people[people.length-1].loc;*/
 
 	}
 
@@ -182,32 +188,63 @@
 			// If the person is bored of their current action
 			if (people[i].boredom >= 100) {
 
+				// Clear current conversation
+				if (people[i].conversationInd >= 0) {
+					conversations[people[i].conversationInd].people.splice(conversations.indexOf(i), 1);
+					people[i].conversationInd = -1;
+				}
+
 				// If drink is empty
 				if (people[i].holding != -1 && people[i].drinkLeft <= 0) {
-					people[i].destinationLoc = 500;
+					people[i].destinationLoc = 530;
 					people[i].action = "goingToBin";
+					people[i].boredom = 0;
 
 				// If need to pee
 				} else if (people[i].bladder >= 100) {
 					people[i].destinationLoc = 100;
 					people[i].action = "goingToBathroom";
+					people[i].boredom = 0;
 
 				// If don't have a drink
 				} else if (people[i].holding == -1) {
 					people[i].destinationLoc = 460;
 					people[i].action = "goingToFridge";
+					people[i].boredom = 0;
 
 				// Choose a conversation to join
 				} else {
 
+					// For each possible conversation
+					for (var j=0; j<conversations.length; j++){
+						
+						// If there is space free, join
+						if (conversations[j].people.length < conversations[j].locs.length) {
+							people[i].conversationInd = j;
+							people[i].destinationLoc = conversations[j].locs[conversations[j].people.length];
+							people[i].action = "goingToTalk";
+							conversations[j].people.push(i);
+							people[i].boredom = 0;
+							break;
+						}
+
+					}
+
 				}
 
-				// No longer bored
-				people[i].boredom = 0;
+			// Otherwise they get a bit more bored if not walking
+			} else if (people[i].action.indexOf("going") < 0 ) {
 
-			// Otherwise they get a bit more bored
-			} else {
-				people[i].boredom += 1;
+				// If they're stood alone
+				if (people[i].conversationInd == -1) {
+					people[i].boredom += 1;
+
+				// If they're in a conversation
+	 			} else {
+					people[i].boredom += 0.2;
+
+				}
+
 			}
 
 			// DEBUG
@@ -215,9 +252,11 @@
 
 				// Move their X
 				if (people[i].loc > people[i].destinationLoc) {
-					people[i].loc -= 1.0;
+					people[i].loc -= 1.2;
+					people[i].facingRight = false;
 				} else if (people[i].loc < people[i].destinationLoc) {
-					people[i].loc += 1.0;
+					people[i].loc += 1.2;
+					people[i].facingRight = true;
 				}
 
 				// Update Y based on X
@@ -244,15 +283,15 @@
 				}
 
 				// See if the pose needs changing
-				if (Math.abs(maxDelta) < 3){
+				if (Math.abs(maxDelta) < 2){
 
 					// Save the old pose
 					var oldPose = people[i].pose;
 
 					// Stopping walking
 					if      (people[i].action == "standing" && people[i].pose != "standing") {people[i].pose = "standing";}
-					else if (people[i].action == "holding" && people[i].pose != "holding") {people[i].pose = "holding";}
-
+					else if (people[i].action == "holding" && people[i].pose.indexOf("walk") >= 0) {people[i].pose = "holding";}
+					
 					// Walk cycle
 					else if (people[i].pose == "walk1") {people[i].pose = "walk2";}
 					else if (people[i].pose == "walk2") {people[i].pose = "walk3";}
@@ -266,9 +305,13 @@
 					else if (people[i].pose == "walkHold4") {people[i].pose = "walkHold1";}
 
 					// Starting to walk
-					else if (people[i].pose == "standing" && people[i].action == "goingToFridge") {people[i].pose = "walkTran";}
+					else if ((people[i].pose == "standing" || people.pos == "holding") && people[i].action.indexOf("going") >= 0) {people[i].pose = "walk1";}
 					else if (people[i].pose == "walkTran") {people[i].pose = "walk1";}
 					else if (people[i].pose == "walkHoldTran") {people[i].pose = "walkHold1";}
+
+					// Drink cycle
+					else if (people[i].drinkTimer >= 100 && people[i].action == "holding" && people[i].pose == "holding") {people[i].pose = "drinking";}
+					else if (people[i].drinkTimer <= 0 && people[i].action == "holding" && people[i].pose == "drinking") {people[i].pose = "holding";}
 
 					// Calculate the delta needed each frame between these poses
 					for (var j=0; j<10; j++) {
@@ -277,8 +320,29 @@
 
 				}
 
+				// Idle people should drink sometimes
+				if (people[i].pose == "drinking" && people[i].drinkLeft >= 0 && people[i].drinkTimer >= 0) {
+					people[i].drinkTimer -= 2.0;
+					people[i].bladder += 0.2;
+					people[i].drinkLeft -= 0.5;
+				} else if (people[i].drinkTimer <= 100) {
+					people[i].drinkTimer += 0.5;
+				}
+
+				// People in the bathroom
+				if (people[i].inBathroom) {
+					people[i].bladder -= 0.2;
+					if (people[i].bladder <= 0) {
+						people[i].inBathroom = false;
+						people[i].boredom = 100;
+					}
+				}
+
 				// If reached the destination
-				if (people[i].loc == people[i].destinationLoc) {
+				if (Math.abs(people[i].loc - people[i].destinationLoc) < 2) {
+
+					// Stop them wobbling
+					people[i].destinationLoc = people[i].loc;
 
 					// If getting a drink
 					if (people[i].action == "goingToFridge") {
@@ -293,9 +357,24 @@
 						people[i].action = "standing";
 						people[i].boredom = 80;
 
+					// If going to bathroom
+					} else if (people[i].action == "goingToBathroom") {
+						people[i].inBathroom = true;
+
+					// If going to sit
+					} else if (people[i].action == "goingToTalk") {
+						if (people[i].holding == -1) {
+							people[i].action = "standing";
+						} else {
+							people[i].action = "holding";
+						}
+
 					}
 
 				}
+
+				// TODO
+				debugText = "action " + people[i].action + " thirst " + people[i].drinkTimer.toFixed(1) + " bladder " + people[i].bladder.toFixed(1) + " left " + people[i].drinkLeft.toFixed(1) + " boredom " + people[i].boredom.toFixed(1);
 
 			}
 
@@ -303,6 +382,7 @@
 
 	}
 
+	// Called every frame, handles all the canvas operations
 	function draw() {
 
 		// Clear the canvas
@@ -314,8 +394,21 @@
 		// Draw the people
 		for (var i=0; i<people.length; i++) {
 
+			// If they're hidden, skip the draw
+			if (people[i].inBathroom) {
+				continue;
+			}
+
+			// Draw flipped if needed
+			if (!people[i].facingRight){
+				ctx.save();
+				ctx.translate(people[i].x, people[i].y);
+				ctx.scale(-1, 1);
+			} else {
+				ctx.translate(people[i].x, people[i].y);
+			}
+
 			// Overall/torso rotation
-			ctx.translate(people[i].x, people[i].y);
 			ctx.rotate(people[i].angles[9]*toRad);
 
 			// Right arm
@@ -385,10 +478,15 @@
 			ctx.rotate(-people[i].angles[9]*toRad);
 			ctx.translate(-people[i].x, -people[i].y);
 
+			// Flip back if needed
+			if (!people[i].facingRight){
+				ctx.restore();
+			}
+
 		}
 
 		// Write the DEBUG text
-		ctx.font = "30px Arial";
+		ctx.font = "14px Arial";
 		ctx.fillText(debugText, 10, 450);
 	}
 
