@@ -29,6 +29,7 @@
 	var peopleSVG = new Image();
 	var objectsSVG = new Image();
 	var placesSVG = new Image();
+	var overlaySVG = new Image();
 
 	// SVG sizings
 	var placeLoc = [0, 0, 500, 250];
@@ -43,22 +44,22 @@
 
 	// Poses 
 	// [neck, lArmUpper, lArmLower, rArmUpper, rArmLower, 
-    //  lLegUpper, lLegLower, rLegUpper, rLegLower]
+    //  lLegUpper, lLegLower, rLegUpper, rLegLower, torso, vertDelta]
 	poses = {
-		"standing":     [0,  0,   0, 0, 0,   0,   0,   0,   0, 0],
-		"holding":      [0,  0, -90, 0, 0,   0,   0,   0,   0, 0],
-		"drinking":     [0,-50,-100, 0, 0,   0,   0,   0,   0, 0],
-		"walk1":        [0,  0,   0, 0, 0, -30,  40,  10,   5, 0],
-		"walk2":        [0,  0,   0, 0, 0, -20,  10,  20,  10, 0],
-		"walk3":        [0,  0,   0, 0, 0,  10,  10, -35,  35, 0],
-		"walk4":        [0,  0,   0, 0, 0,  10,  10, -20,  10, 0],
-		"walkHold1":    [0,  0, -90, 0, 0, -30,  40,  10,   5, 0],
-		"walkHold2":    [0,  0, -90, 0, 0, -20,  10,  20,  10, 0],
-		"walkHold3":    [0,  0, -90, 0, 0,  10,  10, -35,  35, 0],
-		"walkHold4":    [0,  0, -90, 0, 0,  10,  10, -20,  10, 0],
-		"sat":          [0,  0, -20, 0, 0, -60,  30, -60,  30, 0],
-		"satHold":      [0,  0, -90, 0, 0, -60,  30, -60,  30, 0],
-		"satDrinking":  [0,-20, -90, 0, 0, -60,  30, -60,  30, 0],
+		"standing":        [0,  0,   0, 0, 0,   0,   0,   0,   0, 0,   0],
+		"holding":         [0,  0, -90, 0, 0,   0,   0,   0,   0, 0,   0],
+		"drinking":        [0,-50,-100, 0, 0,   0,   0,   0,   0, 0,   0],
+		"walk1":           [0,  0,   0, 0, 0, -30,  40,  10,   5, 0,   0],
+		"walk2":           [0,  0,   0, 0, 0, -20,  10,  20,  10, 0,   0],
+		"walk3":           [0,  0,   0, 0, 0,  10,  10, -35,  35, 0,   0],
+		"walk4":           [0,  0,   0, 0, 0,  10,  10, -20,  10, 0,   0],
+		"walkHold1":       [0,  0, -90, 0, 0, -30,  40,  10,   5, 0,   0],
+		"walkHold2":       [0,  0, -90, 0, 0, -20,  10,  20,  10, 0,   0],
+		"walkHold3":       [0,  0, -90, 0, 0,  10,  10, -35,  35, 0,   0],
+		"walkHold4":       [0,  0, -90, 0, 0,  10,  10, -20,  10, 0,   0],
+		"sitting":         [0,  0, -20, 0, 0, -80,  80, -80,  80, 0,  20],
+		"sittingHolding":  [0,  0, -90, 0, 0, -80,  80, -80,  80, 0,  20],
+		"sittingDrinking": [0,-50,-100, 0, 0, -80,  80, -80,  80, 0,  20],
 	};
 
 	// Timings
@@ -73,8 +74,19 @@
 
 	// Possible conversation locations
 	var conversations = [
-		{"speaking": -1, "numPeople": 0, "maxPeople": 3, "people": [-1, -1, -1], "locs": [300, 350, 400]}, // Sofa and chairs
+		{"locs": [255, 295, 335, 410], "isSat": [true, true, true, true],     "facingRight": [true, true, true, false],  "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
+		{"locs": [65, 170],            "isSat": [true, true],                 "facingRight": [true, false],              "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
+		{"locs": [725, 795, 845],      "isSat": [true, true, true],           "facingRight": [true, false, false],       "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
+		{"locs": [540, 580, 630, 675], "isSat": [false, false, false, false], "facingRight": [true, true, false, false], "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
 	];
+
+	// Setup various things based on the conversation location lengths
+	for (var i=0; i<conversations.length; i++) {
+		conversations[i].maxPeople = conversations[i].locs.length;
+		for (var j=0; j<conversations[i].locs.length; j++) {
+			conversations[i].people.push(-1);
+		}
+	}
 
 	// Locations around the scene
 	var locBathroom = 70;
@@ -85,8 +97,11 @@
 	var drinkX = 0;
 	var drinkYMin = 0;
 	var drinkYMax = 4;
+	var peopleYMin = 0;
+	var peopleYMax = 13;
 	var bubbleX = 1;
-	var bubbleY = 0;
+	var bubbleRightY = 0;
+	var bubbleLeftY = 1;
 	var symbolX = 2;
 	var symbolYBathroom = 0;
 	var symbolYFridge = 1;
@@ -99,14 +114,15 @@
 						  "loc": 100, 
 						  "x": 100, 
 						  "y": 133, 
-						  "angles": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
-						  "angleDeltas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+						  "angles":      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
+						  "angleDeltas": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 
 						  "pose": "standing", 
 						  "destinationLoc": 100, 
 						  "boredom": 0, 
 						  "drinkLeft": 0, 
 						  "fixed": false, 
 						  "facingRight": true, 
+						  "headRight": true, 
 						  "bladder": 0, 
 						  "drinkTimer": 0, 
 						  "speechTimer": 0, 
@@ -129,6 +145,8 @@
 		objectsSVG.src = "objects.svg";
 		placesSVG.onload = function() {};
 		placesSVG.src = "places.svg";
+		overlaySVG.onload = function() {};
+		overlaySVG.src = "overlay.svg";
 
 		// Get the canvas
 		canvas = document.getElementById("main");
@@ -141,7 +159,7 @@
 		window.requestAnimationFrame(loop);
 
 		// Add people
-		for (var i=0; i<2; i++) {
+		for (var i=0; i<4; i++) {
 			people.push(JSON.parse(JSON.stringify(personTemplate)));
 			people[people.length-1].sprite = i;
 			people[people.length-1].loc = Math.floor(Math.random() * 700) + 20;
@@ -149,7 +167,34 @@
 			people[people.length-1].boredom = Math.floor(Math.random() * 100);
 		}
 
-		// Test conversation locations TODO
+		// Test conversation locations
+		/*for (var i=0; i<conversations.length; i++) {*/
+			/*for (var j=0; j<conversations[i].locs.length; j++) {*/
+				/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
+				/*people[people.length-1].loc = conversations[i].locs[j];*/
+				/*people[people.length-1].fixed = true;*/
+				/*if (conversations[i].isSat[j]) {*/
+					/*people[people.length-1].pose = "sat";*/
+				/*}*/
+
+				/*// Temp update*/
+				/*if (people[people.length-1].loc > 700) {*/
+					/*people[people.length-1].x = people[people.length-1].loc-700;*/
+					/*people[people.length-1].y = 340;*/
+				/*} else if (people[people.length-1].loc > 440) {*/
+					/*people[people.length-1].x = people[people.length-1].loc-240;*/
+					/*people[people.length-1].y = 340;*/
+				/*} else {*/
+					/*people[people.length-1].x = people[people.length-1].loc;*/
+					/*people[people.length-1].y = 133;*/
+				/*}*/
+				/*for (var k=0; k<10; k++) {*/
+					/*people[people.length-1].angles[k] = poses[people[people.length-1].pose][k];*/
+				/*}*/
+				/*people[people.length-1].angles[10] = poses[people[people.length-1].pose][10];*/
+
+			/*}*/
+		/*}*/
 
 	}
 
@@ -179,12 +224,17 @@
 			if (people[i].boredom >= 100) {
 
 				// Clear current conversation
+				var wasTalking = false;
 				if (people[i].conversationInd >= 0) {
-					if (conversations[people[i].conversationInd].speaking == i) {
-						conversations[people[i].conversationInd].speaking = -1;
+					var ind = people[i].conversationInd;
+					if (conversations[ind].numPeople > 1) {
+						wasTalking = true;
 					}
-					conversations[people[i].conversationInd].people[conversations[people[i].conversationInd].people.indexOf(i)] = -1;
-					conversations[people[i].conversationInd].numPeople -= 1;
+					if (conversations[ind].speaking == i) {
+						conversations[ind].speaking = -1;
+					}
+					conversations[ind].people[conversations[ind].people.indexOf(i)] = -1;
+					conversations[ind].numPeople -= 1;
 					people[i].conversationInd = -1;
 					people[i].isSpeaking = false;
 				}
@@ -192,32 +242,44 @@
 				// If drink is empty
 				if (people[i].holding != -1 && people[i].drinkLeft <= 0) {
 					people[i].destinationLoc = locBin;
-					people[i].isSpeaking = true;
-					people[i].topic1 = symbolYBin;
-					people[i].topic2 = -1;
-					people[i].speechTimer = 80;
 					people[i].action = "goingToBin";
 					people[i].boredom = 0;
+
+					// Announce if leaving a convo
+					if (wasTalking) {
+						people[i].isSpeaking = true;
+						people[i].topic1 = symbolYBin;
+						people[i].topic2 = -1;
+						people[i].speechTimer = 80;
+					}
 
 				// If need to pee
 				} else if (people[i].bladder >= 100) {
 					people[i].destinationLoc = locBathroom;
-					people[i].isSpeaking = true;
-					people[i].topic1 = symbolYBathroom;
-					people[i].topic2 = -1;
-					people[i].speechTimer = 80;
 					people[i].action = "goingToBathroom";
 					people[i].boredom = 0;
+
+					// Announce if leaving a convo
+					if (wasTalking) {
+						people[i].isSpeaking = true;
+						people[i].topic1 = symbolYBathroom;
+						people[i].topic2 = -1;
+						people[i].speechTimer = 80;
+					}
 
 				// If don't have a drink
 				} else if (people[i].holding == -1) {
 					people[i].destinationLoc = locFridge;
-					people[i].isSpeaking = true;
-					people[i].topic1 = symbolYFridge;
-					people[i].topic2 = -1;
-					people[i].speechTimer = 80;
 					people[i].action = "goingToFridge";
 					people[i].boredom = 0;
+
+					// Announce if leaving a convo
+					if (wasTalking) {
+						people[i].isSpeaking = true;
+						people[i].topic1 = symbolYFridge;
+						people[i].topic2 = -1;
+						people[i].speechTimer = 80;
+					}
 
 				// Choose a conversation to join
 				} else {
@@ -262,17 +324,57 @@
 
 			}
 
+			// If in a conversation
+			if (people[i].conversationInd != -1) {
+
+				// If it's now my turn and not speaking and not alone
+				var ind = people[i].conversationInd;
+				if (!people[i].isSpeaking && conversations[ind].numPeople > 1 && Math.abs(people[i].loc-people[i].destinationLoc) < 3 && conversations[ind].speaking == i) {
+
+					// Start speaking with two random topics
+					people[i].isSpeaking = true;
+					people[i].topic1 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
+					people[i].topic2 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
+
+					// Make sure they're different
+					if (people[i].topic1 == people[i].topic2) {
+						people[i].topic2 = ((people[i].topic2 + 1) % (symbolYMax-symbolYMin)) + symbolYMin;
+					}
+
+				}
+
+				// If not alone
+				if (conversations[ind].numPeople > 1) {
+
+					// Who to face in the conversation
+					var personToFace = conversations[ind].speaking;
+					if (personToFace != i && personToFace != -1) {
+
+						// Face this person
+						people[i].headRight = (people[i].loc < people[personToFace].loc);
+
+					}
+
+				}
+
+			}
+
 			// Move their X
 			if (people[i].loc > people[i].destinationLoc) {
 				people[i].loc -= 1.2;
 				people[i].facingRight = false;
+				people[i].headRight = false;
 			} else if (people[i].loc < people[i].destinationLoc) {
 				people[i].loc += 1.2;
 				people[i].facingRight = true;
+				people[i].headRight = true;
 			}
 
 			// Update Y based on X
-			if (people[i].loc > 440) {
+			if (people[i].loc > 700) {
+				people[i].x = people[i].loc-700;
+				people[i].y = 340;
+			} else if (people[i].loc > 440) {
 				people[i].x = people[i].loc-240;
 				people[i].y = 340;
 			} else {
@@ -289,6 +391,7 @@
 					people[i].angles[j] += people[i].angleDeltas[j];
 				}
 			}
+			people[i].angles[10] += people[i].angleDeltas[10];
 
 			// See if the pose needs changing
 			if (Math.abs(maxDelta) < 2){
@@ -299,6 +402,8 @@
 				// Stopping walking
 				if      (people[i].action == "standing" && people[i].pose != "standing") {people[i].pose = "standing";}
 				else if (people[i].action == "holding" && people[i].pose.indexOf("walk") >= 0) {people[i].pose = "holding";}
+				else if (people[i].action == "sitting" && people[i].pose.indexOf("walk") >= 0) {people[i].pose = "sitting";}
+				else if (people[i].action == "sittingHolding" && people[i].pose.indexOf("walk") >= 0) {people[i].pose = "sittingHolding";}
 				
 				// Walk cycle
 				else if (people[i].pose == "walk1") {people[i].pose = "walk2";}
@@ -313,23 +418,26 @@
 				else if (people[i].pose == "walkHold4") {people[i].pose = "walkHold1";}
 
 				// Starting to walk
-				else if (people[i].pose == "standing" && people[i].action.indexOf("going") >= 0) {people[i].pose = "walk1";}
-				else if ((people[i].pose == "drinking" || people[i].pose == "holding") && people[i].action.indexOf("going") >= 0) {people[i].pose = "walkHold1";}
+				else if ((people[i].pose == "standing" || people[i].pose == "sitting") && people[i].action.indexOf("going") >= 0) {people[i].pose = "walk1";}
+				else if ((people[i].pose == "drinking" || people[i].pose == "holding" || people[i].pose == "sittingDrinking" || people[i].pose == "sittingHolding") && people[i].action.indexOf("going") >= 0) {people[i].pose = "walkHold1";}
 
 				// Drink cycle
 				else if (people[i].drinkTimer >= 100 && people[i].action == "holding" && people[i].pose == "holding") {people[i].pose = "drinking";}
 				else if ((people[i].drinkTimer <= 0 || people[i].drinkLeft <= 0) && people[i].action == "holding" && people[i].pose == "drinking") {people[i].pose = "holding";}
+				else if (people[i].drinkTimer >= 100 && people[i].action == "sittingHolding" && people[i].pose == "sittingHolding") {people[i].pose = "sittingDrinking";}
+				else if ((people[i].drinkTimer <= 0 || people[i].drinkLeft <= 0) && people[i].action == "sittingHolding" && people[i].pose == "sittingDrinking") {people[i].pose = "sittingHolding";}
 
 				// Calculate the delta needed each frame between these poses
 				for (var j=0; j<10; j++) {
 					people[i].angleDeltas[j] = (poses[people[i].pose][j] - poses[oldPose][j]) / 20.0;
 				}
+				people[i].angleDeltas[10] = (poses[people[i].pose][10] - poses[oldPose][10]) / 20.0;
 
 			}
 
 			// Idle people should drink sometimes
 			if (people[i].drinkLeft > 0) {
-				if (people[i].pose == "drinking" && people[i].drinkTimer >= 0) {
+				if ((people[i].pose == "drinking" || people[i].pose == "sittingDrinking") && people[i].drinkTimer >= 0) {
 					people[i].drinkTimer -= 2.0;
 					people[i].bladder += 0.2;
 					people[i].drinkLeft -= 0.5;
@@ -337,7 +445,7 @@
 					if (people[i].isSpeaking){
 						people[i].drinkTimer += 0.1;
 					} else {
-						people[i].drinkTimer += 0.5;
+						people[i].drinkTimer += 0.3;
 					}
 				}
 			} else {
@@ -380,37 +488,29 @@
 
 				// If going to talk
 				} else if (people[i].action == "goingToTalk") {
-					if (people[i].holding == -1) {
-						people[i].action = "standing";
+					var ind = people[i].conversationInd;
+
+					// If needs to be sat, either drinking or not
+					if (conversations[ind].isSat[conversations[ind].people.indexOf(i)]){
+						if (people[i].holding == -1) {
+							people[i].action = "sitting";
+						} else {
+							people[i].action = "sittingHolding";
+						}
+
+					// If needs to be stood, either drinking or not
 					} else {
-						people[i].action = "holding";
+						if (people[i].holding == -1) {
+							people[i].action = "standing";
+						} else {
+							people[i].action = "holding";
+						}
 					}
 
-				}
-
-			}
-
-			// If in a conversation
-			if (people[i].conversationInd != -1) {
-
-				// If it's now my turn and not speaking and not alone
-				if (!people[i].isSpeaking && conversations[people[i].conversationInd].numPeople > 1 && Math.abs(people[i].loc-people[i].destinationLoc) < 3 && conversations[people[i].conversationInd].speaking == i) {
-
-					// Start speaking with two random topics
-					people[i].isSpeaking = true;
-					people[i].topic1 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
-					people[i].topic2 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
-
-					// Make sure they're different
-					if (people[i].topic1 == people[i].topic2) {
-						people[i].topic2 = ((people[i].topic2 + 1) % (symbolYMax-symbolYMin)) + symbolYMin;
-					}
+					// Face the right way
+					people[i].facingRight = conversations[ind].facingRight[conversations[ind].people.indexOf(i)];
 
 				}
-
-				// If speaking, turn to face someone at random TODO
-
-				// Otherwise, turn to face the speaker TODO
 
 			}
 
@@ -448,14 +548,14 @@
 
 		}
 
-		// TODO
+		// DEBUG
 		debugText = "";
-		/*debugText += "action = " + people[0].action + "  "; */
-		/*debugText += "pose = " + people[0].pose + "  "; */
-		debugText += "boredom = " + people[0].boredom.toFixed(1) + "  ";
-		debugText += "bladder = " + people[0].bladder.toFixed(1) + "  ";
+		debugText += "action = " + people[0].action + "  "; 
+		debugText += "pose = " + people[0].pose + "  "; 
+		/*debugText += "boredom = " + people[0].boredom.toFixed(1) + "  ";*/
+		/*debugText += "bladder = " + people[0].bladder.toFixed(1) + "  ";*/
 		debugText += "thirst = " + people[0].drinkTimer.toFixed(1) + "  ";
-		debugText += "left = " + people[0].drinkLeft.toFixed(1) + "  ";
+		/*debugText += "left = " + people[0].drinkLeft.toFixed(1) + "  ";*/
 		/*debugText += "speaking = " + conversations[0].speaking + "  ";*/
 		/*debugText += "speechTimer = " + people[0].speechTimer.toFixed(2) + "  ";*/
 
@@ -478,13 +578,15 @@
 				continue;
 			}
 
+			// Save this current canvas setting
+			ctx.save();
+
 			// Draw flipped if needed
 			if (!people[i].facingRight){
-				ctx.save();
-				ctx.translate(people[i].x, people[i].y);
+				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
 				ctx.scale(-1, 1);
 			} else {
-				ctx.translate(people[i].x, people[i].y);
+				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
 			}
 
 			// Overall/torso rotation
@@ -518,11 +620,17 @@
 			ctx.drawImage(peopleSVG, peopleLoc[2],   people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
 
 			// Head
+			if (people[i].facingRight != people[i].headRight){
+				ctx.scale(-1, 1);
+			} 
 			ctx.translate(0, -40);
 			ctx.rotate(people[i].angles[0]*toRad);
 			ctx.drawImage(peopleSVG, 0,              people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
 			ctx.rotate(-people[i].angles[0]*toRad);
 			ctx.translate(0, 40);
+			if (people[i].facingRight != people[i].headRight){
+				ctx.scale(-1, 1);
+			} 
 
 			// Left leg
 			ctx.translate(-6, 3);
@@ -553,45 +661,52 @@
 			ctx.rotate(-people[i].angles[1]*toRad);
 			ctx.translate(11, 30);
 
-			// If saying something, draw the speech bubble
+			// Return to prev state
+			ctx.restore();
+
+		}
+
+		// Draw the speech bubbles
+		for (var i=0; i<people.length; i++) {
+
+			// If saying something, draw the speech bubble TODO
 			if (people[i].isSpeaking) {
-				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleY*peopleLoc[3], peopleLoc[2], peopleLoc[3], 10, -130, peopleLoc[2], peopleLoc[3]);
-			}
-
-			// Undo torso rotation
-			ctx.rotate(-people[i].angles[9]*toRad);
-			ctx.translate(-people[i].x, -people[i].y);
-
-			// Flip back if needed
-			if (!people[i].facingRight){
-				ctx.restore();
+				if (people[i].facingRight) {
+					ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+5, people[i].y+people[i].angles[10]-130, peopleLoc[2], peopleLoc[3]);
+	 			} else {
+					ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x-100, people[i].y+people[i].angles[10]-130, peopleLoc[2], peopleLoc[3]);
+				}
 			}
 
 			// Add the topics with flipping
 			if (people[i].isSpeaking) {
+				var topicY = people[i].angles[10]-130;
 
 				// If only one topic
 				if (people[i].topic2 == -1) {
-					var topicX = -120;
+					var topicX = -107;
 					if (people[i].facingRight) {
-						topicX = -0;
+						topicX = -5;
 					}
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+8, people[i].y-130, peopleLoc[2], peopleLoc[3]);
+					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+8, people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
 
 				// If two topics
 				} else {
-					var topicX = -120;
+					var topicX = -113;
 					if (people[i].facingRight) {
-						topicX = -3;
+						topicX = -6;
 					}
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX,    people[i].y-130, peopleLoc[2], peopleLoc[3]);
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+20, people[i].y-130, peopleLoc[2], peopleLoc[3]);
+					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX,    people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
+					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+20, people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
 
 				}
 
 			}
 
 		}
+
+		// Draw the foreground
+		ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width, placesSVG.height);
 
 		// Write the DEBUG text
 		ctx.font = "14px Arial";
