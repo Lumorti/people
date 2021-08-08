@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.3677584"
-     inkscape:cx="383.26706"
-     inkscape:cy="64.625178"
+     inkscape:zoom="1.6838792"
+     inkscape:cx="424.76306"
+     inkscape:cy="134.39371"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -64,6 +64,13 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-3.4144,-7.2175206)">
+    <rect
+       style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1.06500006;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="rect1716"
+       width="122.74899"
+       height="106.66853"
+       x="3.4144001"
+       y="7.2175207" />
     <g
        transform="matrix(1.1524658,0,0,1.1524658,-78.970695,3.3266964)"
        id="g1691-94-2" />

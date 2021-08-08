@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 
 <style>
@@ -18,7 +18,7 @@
 	#main {
 		width: 100%;
 		height: 100%;
-		border: 5px solid black;
+		overflow: hidden;
 	}
 
 </style>
@@ -46,20 +46,20 @@
 	// [neck, lArmUpper, lArmLower, rArmUpper, rArmLower, 
     //  lLegUpper, lLegLower, rLegUpper, rLegLower, torso, vertDelta]
 	poses = {
-		"standing":        [0,  0,   0, 0, 0,   0,   0,   0,   0, 0,   0],
-		"holding":         [0,  0, -90, 0, 0,   0,   0,   0,   0, 0,   0],
-		"drinking":        [0,-50,-100, 0, 0,   0,   0,   0,   0, 0,   0],
-		"walk1":           [0,  0,   0, 0, 0, -30,  40,  10,   5, 0,   0],
-		"walk2":           [0,  0,   0, 0, 0, -20,  10,  20,  10, 0,   0],
-		"walk3":           [0,  0,   0, 0, 0,  10,  10, -35,  35, 0,   0],
-		"walk4":           [0,  0,   0, 0, 0,  10,  10, -20,  10, 0,   0],
-		"walkHold1":       [0,  0, -90, 0, 0, -30,  40,  10,   5, 0,   0],
-		"walkHold2":       [0,  0, -90, 0, 0, -20,  10,  20,  10, 0,   0],
-		"walkHold3":       [0,  0, -90, 0, 0,  10,  10, -35,  35, 0,   0],
-		"walkHold4":       [0,  0, -90, 0, 0,  10,  10, -20,  10, 0,   0],
-		"sitting":         [0,  0, -20, 0, 0, -80,  80, -80,  80, 0,  20],
-		"sittingHolding":  [0,  0, -90, 0, 0, -80,  80, -80,  80, 0,  20],
-		"sittingDrinking": [0,-50,-100, 0, 0, -80,  80, -80,  80, 0,  20],
+		"standing":        [0,  0,   0,  0,  0,   0,   0,   0,   0, 0,   0],
+		"holding":         [0,  0, -90,  0,  0,   0,   0,   0,   0, 0,   0],
+		"drinking":        [0,-50,-100,  0,  0,   0,   0,   0,   0, 0,   0],
+		"walk1":           [0,  0,   0,  0,  0, -30,  40,  10,   5, 0,   0],
+		"walk2":           [0,  0,   0,  0,  0, -20,  10,  20,  10, 0,   0],
+		"walk3":           [0,  0,   0,  0,  0,  10,  10, -35,  35, 0,   0],
+		"walk4":           [0,  0,   0,  0,  0,  10,  10, -20,  10, 0,   0],
+		"walkHold1":       [0,  0, -90,  0,  0, -30,  40,  10,   5, 0,   0],
+		"walkHold2":       [0,  0, -90,  0,  0, -20,  10,  20,  10, 0,   0],
+		"walkHold3":       [0,  0, -90,  0,  0,  10,  10, -35,  35, 0,   0],
+		"walkHold4":       [0,  0, -90,  0,  0,  10,  10, -20,  10, 0,   0],
+		"sitting":         [0,  0, -20,-00,-20, -80,  80, -80,  80, 0,  20],
+		"sittingHolding":  [0,  0, -90,-00,-20, -80,  80, -80,  80, 0,  20],
+		"sittingDrinking": [0,-50,-100,-00,-20, -80,  80, -80,  80, 0,  20],
 	};
 
 	// Timings
@@ -74,10 +74,10 @@
 
 	// Possible conversation locations
 	var conversations = [
-		{"locs": [255, 295, 335, 410], "isSat": [true, true, true, true],     "facingRight": [true, true, true, false],  "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
+		{"locs": [335, 410, 295, 255], "isSat": [true, true, true, true],     "facingRight": [true, false, true, true],  "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
 		{"locs": [65, 170],            "isSat": [true, true],                 "facingRight": [true, false],              "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
 		{"locs": [725, 795, 845],      "isSat": [true, true, true],           "facingRight": [true, false, false],       "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
-		{"locs": [540, 580, 630, 675], "isSat": [false, false, false, false], "facingRight": [true, true, false, false], "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
+		{"locs": [580, 630, 540, 675], "isSat": [false, false, false, false], "facingRight": [true, false, true, false], "speaking": -1, "numPeople": 0, "maxPeople": 0, "people": []},
 	];
 
 	// Setup various things based on the conversation location lengths
@@ -92,6 +92,7 @@
 	var locBathroom = 70;
 	var locBin = 530;
 	var locFridge = 460;
+	var numInBathroom = 0;
 
 	// Positions in the sprite sheet
 	var drinkX = 0;
@@ -123,6 +124,7 @@
 						  "fixed": false, 
 						  "facingRight": true, 
 						  "headRight": true, 
+						  "headTimer": 0, 
 						  "bladder": 0, 
 						  "drinkTimer": 0, 
 						  "speechTimer": 0, 
@@ -139,66 +141,70 @@
 	function init() {
 
 		// Preload the SVGs
-		peopleSVG.onload = function() {};
-		peopleSVG.src = "people.svg";
-		objectsSVG.onload = function() {};
-		objectsSVG.src = "objects.svg";
-		placesSVG.onload = function() {};
-		placesSVG.src = "places.svg";
-		overlaySVG.onload = function() {};
+		var imagesLoaded = 0;
+		var imagesToLoad = 4;
+
+		// When the images are loaded, check if all are done
+		peopleSVG.onload = function() {
+			imagesLoaded++;
+			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
+		};
+		objectsSVG.onload = function() {
+			imagesLoaded++;
+			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
+		};
+		placesSVG.onload = function() {
+			imagesLoaded++;
+			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
+		};
+		overlaySVG.onload = function() {
+			imagesLoaded++;
+			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
+		};
+
+		// Start all the loading
 		overlaySVG.src = "overlay.svg";
+		peopleSVG.src = "people.svg";
+		placesSVG.src = "places.svg";
+		objectsSVG.src = "objects.svg";
+
+	}
+
+	// Called after all of the SVGs are loaded
+	function afterAllSVGLoad() {
 
 		// Get the canvas
 		canvas = document.getElementById("main");
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
-		ctx = canvas.getContext("2d");
-		ctx.scale(1.5, 1.5);
-
-		// Start the loop
-		window.requestAnimationFrame(loop);
+		ctx = canvas.getContext("2d", {alpha: false});
+		ctx.scale(canvas.width / placesSVG.width, canvas.width / placesSVG.width);
 
 		// Add people
-		for (var i=peopleYMin; i<6; i++) {
+		for (var i=peopleYMin; i<peopleYMax; i++) {
 			people.push(JSON.parse(JSON.stringify(personTemplate)));
 			people[people.length-1].sprite = i;
 			people[people.length-1].loc = Math.floor(Math.random() * 700) + 20;
 			people[people.length-1].destinationLoc = people[people.length-1].loc;
-			people[people.length-1].boredom = Math.floor(Math.random() * 100);
+			people[people.length-1].boredom = Math.floor(Math.random() * 10) + 90;
 			people[people.length-1].holding = Math.floor(Math.random() * (drinkYMax+1-drinkYMin)) + drinkYMin;
 			people[people.length-1].drinkLeft = Math.floor(Math.random() * 90) + 10;
+			people[people.length-1].action = "holding";
+			people[people.length-1].pose = "holding";
+			for (var j=0; j<11; j++) {
+				people[people.length-1].angles[j] = poses[people[people.length-1].pose][j];
+			}
 			people[people.length-1].bladder = Math.floor(Math.random() * 50);
-			people[people.length-1].thirst = Math.floor(Math.random() * 100);
+			people[people.length-1].drinkTimer = Math.floor(Math.random() * 100);
 		}
 
-		// Test conversation locations
-		/*for (var i=0; i<conversations.length; i++) {*/
-			/*for (var j=0; j<conversations[i].locs.length; j++) {*/
-				/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
-				/*people[people.length-1].loc = conversations[i].locs[j];*/
-				/*people[people.length-1].fixed = true;*/
-				/*if (conversations[i].isSat[j]) {*/
-					/*people[people.length-1].pose = "sat";*/
-				/*}*/
+		// Run the sim for a bit to randomise things
+		for (var i=0; i<1000; i++) {
+			update(0);
+		}
 
-				/*// Temp update*/
-				/*if (people[people.length-1].loc > 700) {*/
-					/*people[people.length-1].x = people[people.length-1].loc-700;*/
-					/*people[people.length-1].y = 340;*/
-				/*} else if (people[people.length-1].loc > 440) {*/
-					/*people[people.length-1].x = people[people.length-1].loc-240;*/
-					/*people[people.length-1].y = 340;*/
-				/*} else {*/
-					/*people[people.length-1].x = people[people.length-1].loc;*/
-					/*people[people.length-1].y = 133;*/
-				/*}*/
-				/*for (var k=0; k<10; k++) {*/
-					/*people[people.length-1].angles[k] = poses[people[people.length-1].pose][k];*/
-				/*}*/
-				/*people[people.length-1].angles[10] = poses[people[people.length-1].pose][10];*/
-
-			/*}*/
-		/*}*/
+		// Start the loop
+		window.requestAnimationFrame(loop);
 
 	}
 
@@ -229,6 +235,7 @@
 
 				// Clear current conversation
 				var wasTalking = false;
+				var prevConv = people[i].conversationInd;
 				if (people[i].conversationInd >= 0) {
 					var ind = people[i].conversationInd;
 					if (conversations[ind].numPeople > 1) {
@@ -252,7 +259,7 @@
 					// Announce if leaving a convo
 					if (wasTalking) {
 						people[i].isSpeaking = true;
-						people[i].topic1 = symbolYBin;
+						people[i].topic1 = symbolYFridge;
 						people[i].topic2 = -1;
 						people[i].speechTimer = 80;
 					}
@@ -301,8 +308,10 @@
 								}
 							}
 							people[i].conversationInd = j;
-							people[i].destinationLoc = conversations[j].locs[indInConv];
-							people[i].action = "goingToTalk";
+							if (Math.abs(people[i].loc - conversations[j].locs[indInConv]) > 2) {
+								people[i].destinationLoc = conversations[j].locs[indInConv];
+								people[i].action = "goingToTalk";
+							}
 							conversations[j].people[indInConv] = i;
 							conversations[j].numPeople += 1;
 							people[i].boredom = 0;
@@ -318,11 +327,11 @@
 
 				// If they're stood alone
 				if (people[i].conversationInd == -1) {
-					people[i].boredom += 1;
+					people[i].boredom += 0.2;
 
 				// If they're in a conversation
 	 			} else {
-					people[i].boredom += 0.1;
+					people[i].boredom += 0.05;
 
 				}
 
@@ -337,8 +346,8 @@
 
 					// Start speaking with two random topics
 					people[i].isSpeaking = true;
-					people[i].topic1 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
-					people[i].topic2 = Math.floor(Math.random() * (symbolYMax-symbolYMin)) + symbolYMin;
+					people[i].topic1 = Math.floor(Math.random() * (symbolYMax+1-symbolYMin)) + symbolYMin;
+					people[i].topic2 = Math.floor(Math.random() * (symbolYMax+1-symbolYMin)) + symbolYMin;
 
 					// Make sure they're different
 					if (people[i].topic1 == people[i].topic2) {
@@ -352,11 +361,31 @@
 
 					// Who to face in the conversation
 					var personToFace = conversations[ind].speaking;
+
+					// If speaking
+					if (conversations[ind].speaking == i) {
+
+						// Keep facing random people
+						people[i].headTimer += 1.0;
+						if (people[i].headTimer >= 100) {
+							people[i].headTimer = 0;
+
+							// Pick a random person in the conversation
+							var rand = Math.floor(Math.random() * (conversations[ind].maxPeople));
+							var personToFace = conversations[ind].people[rand];
+
+						}
+
+					// If listening, face the speaking
+					} else {
+						var personToFace = conversations[ind].speaking;
+						people[i].headTimer = 0;
+
+					}
+
+					// Face this person
 					if (personToFace != i && personToFace != -1) {
-
-						// Face this person
 						people[i].headRight = (people[i].loc < people[personToFace].loc);
-
 					}
 
 				}
@@ -365,24 +394,24 @@
 
 			// Move their X
 			if (people[i].loc > people[i].destinationLoc) {
-				people[i].loc -= 1.2;
+				people[i].loc -= 1.3;
 				people[i].facingRight = false;
 				people[i].headRight = false;
 			} else if (people[i].loc < people[i].destinationLoc) {
-				people[i].loc += 1.2;
+				people[i].loc += 1.3;
 				people[i].facingRight = true;
 				people[i].headRight = true;
 			}
 
-			// Update Y based on X
+			// Update Y based on X TODO
 			if (people[i].loc > 700) {
-				people[i].x = people[i].loc-700;
+				people[i].x = Math.round(people[i].loc)-700;
 				people[i].y = 340;
 			} else if (people[i].loc > 440) {
-				people[i].x = people[i].loc-240;
+				people[i].x = Math.round(people[i].loc)-240;
 				people[i].y = 340;
 			} else {
-				people[i].x = people[i].loc;
+				people[i].x = Math.round(people[i].loc);
 				people[i].y = 133;
 			}
 
@@ -442,14 +471,14 @@
 			// Idle people should drink sometimes
 			if (people[i].drinkLeft > 0) {
 				if ((people[i].pose == "drinking" || people[i].pose == "sittingDrinking") && people[i].drinkTimer >= 0) {
-					people[i].drinkTimer -= 2.0;
-					people[i].bladder += 0.2;
-					people[i].drinkLeft -= 0.5;
-				} else if (people[i].drinkTimer <= 100) {
+					people[i].drinkTimer -= 1.5;
+					people[i].bladder += 0.1;
+					people[i].drinkLeft -= 0.2;
+				} else if (people[i].drinkTimer <= 100 && (people[i].action == "holding" || people[i].action == "sittingHolding")) {
 					if (people[i].isSpeaking){
 						people[i].drinkTimer += 0.1;
 					} else {
-						people[i].drinkTimer += 0.3;
+						people[i].drinkTimer += 0.2;
 					}
 				}
 			} else {
@@ -469,7 +498,7 @@
 					people[i].action = "holding";
 					people[i].isSpeaking = false;
 					people[i].topic1 = -1;
-					people[i].boredom = 80;
+					people[i].boredom = 90;
 
 				// If binning something
 				} else if (people[i].action == "goingToBin") {
@@ -477,7 +506,7 @@
 					people[i].action = "standing";
 					people[i].isSpeaking = false;
 					people[i].topic1 = -1;
-					people[i].boredom = 80;
+					people[i].boredom = 95;
 
 				// If going to bathroom
 				} else if (people[i].action == "goingToBathroom") {
@@ -486,8 +515,15 @@
 					people[i].topic1 = -1;
 					if (people[i].holding == -1) {
 						people[i].action = "standing";
+						people[i].pose = "standing";
 					} else {
 						people[i].action = "holding";
+						people[i].pose = "holding";
+					}
+
+					// Force the pose
+					for (var j=0; j<11; j++) {
+						people[i].angles[j] = poses[people[i].pose][j];
 					}
 
 				// If going to talk
@@ -521,7 +557,7 @@
 
 			// If speaking, increment the speech timer
 			if (people[i].isSpeaking) {
-				people[i].speechTimer += 0.2;
+				people[i].speechTimer += 0.3;
 				people[i].boredom -= 0.05;
 
 				// If the speech timer is done, stop speaking
@@ -555,18 +591,143 @@
 
 		// DEBUG
 		debugText = "";
-		/*debugText += "action = " + people[0].action + "  "; */
-		/*debugText += "pose = " + people[0].pose + "  "; */
-		debugText += "boredom = " + people[0].boredom.toFixed(1) + "  ";
+		debugText += "action = " + people[0].action + "  "; 
+		debugText += "pose = " + people[0].pose + "  "; 
+		/*debugText += "boredom = " + people[0].boredom.toFixed(1) + "  ";*/
 		/*debugText += "bladder = " + people[0].bladder.toFixed(1) + "  ";*/
-		/*debugText += "thirst = " + people[0].drinkTimer.toFixed(1) + "  ";*/
-		/*debugText += "left = " + people[0].drinkLeft.toFixed(1) + "  ";*/
-		if (people[0].conversationInd >= 0) {
-			debugText += "speaking = " + conversations[people[0].conversationInd].speaking + "  ";
-		} else {
-			debugText += "speaking = " + -1 + "  ";
-		}
+		/*debugText += "drinkTimer = " + people[0].drinkTimer.toFixed(1) + "  ";*/
+		/*debugText += "drinLeft = " + people[0].drinkLeft.toFixed(1) + "  ";*/
+		/*debugText += "convo = " + people[0].conversationInd + "  ";*/
+		/*if (people[0].conversationInd >= 0) {*/
+			/*debugText += "speaking = " + conversations[people[0].conversationInd].speaking + "  ";*/
+		/*} else {*/
+			/*debugText += "speaking = " + -1 + "  ";*/
+		/*}*/
 		/*debugText += "speechTimer = " + people[0].speechTimer.toFixed(2) + "  ";*/
+
+	}
+
+	// Draw a single person
+	function drawPerson(person) {
+
+		// Draw flipped if needed TODO perf, maybe parallel
+		if (!person.facingRight){
+			ctx.translate(person.x, person.y+person.angles[10]);
+			ctx.scale(-1, 1);
+		} else {
+			ctx.translate(person.x, person.y+person.angles[10]);
+		}
+
+		// Overall/torso rotation
+		ctx.rotate(person.angles[9]*toRad);
+
+		// Right arm
+		ctx.translate(9, -30);
+		ctx.rotate(person.angles[3]*toRad);
+		ctx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.translate(2, 20);
+		ctx.rotate(person.angles[4]*toRad);
+		ctx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.rotate(-person.angles[4]*toRad);
+		ctx.translate(-2, -20);
+		ctx.rotate(-person.angles[3]*toRad);
+		ctx.translate(-9, 30);
+		
+		// Right leg
+		ctx.translate(6, 3);
+		ctx.rotate(person.angles[7]*toRad);
+		ctx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.translate(1, 25);
+		ctx.rotate(person.angles[8]*toRad);
+		ctx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.rotate(-person.angles[8]*toRad);
+		ctx.translate(-1, -25);
+		ctx.rotate(-person.angles[7]*toRad);
+		ctx.translate(-6, -3);
+
+		// Torso
+		ctx.drawImage(peopleSVG, peopleLoc[2],   person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+
+		// Head
+		if (person.facingRight != person.headRight){
+			ctx.scale(-1, 1);
+		} 
+		ctx.translate(0, -40);
+		ctx.rotate(person.angles[0]*toRad);
+		ctx.drawImage(peopleSVG, 0,              person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.rotate(-person.angles[0]*toRad);
+		ctx.translate(0, 40);
+		if (person.facingRight != person.headRight){
+			ctx.scale(-1, 1);
+		} 
+
+		// Left leg
+		ctx.translate(-6, 3);
+		ctx.rotate(person.angles[5]*toRad);
+		ctx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.translate(1, 25);
+		ctx.rotate(person.angles[6]*toRad);
+		ctx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.rotate(-person.angles[6]*toRad);
+		ctx.translate(-1, -25);
+		ctx.rotate(-person.angles[5]*toRad);
+		ctx.translate(6, -3);
+
+		// Left arm
+		ctx.translate(-11, -30);
+		ctx.rotate(person.angles[1]*toRad);
+		ctx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.translate(1, 20);
+		ctx.rotate(person.angles[2]*toRad);
+		if (person.holding >= 0) {
+			ctx.translate(0, 22);
+			ctx.drawImage(objectsSVG, drinkX, person.holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
+			ctx.translate(0, -22);
+		}
+		ctx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		ctx.rotate(-person.angles[2]*toRad);
+		ctx.translate(-1, -20);
+		ctx.rotate(-person.angles[1]*toRad);
+		ctx.translate(11, 30);
+
+	}
+
+	// Draw a single person's speech bubble
+	function drawBubble(person) {
+
+		// If saying something, draw the speech bubble
+		if (person.isSpeaking) {
+			if (person.facingRight) {
+				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+5, person.y+person.angles[10]-130, peopleLoc[2], peopleLoc[3]);
+			} else {
+				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x-100, person.y+person.angles[10]-130, peopleLoc[2], peopleLoc[3]);
+			}
+		}
+
+		// Add the topics with flipping
+		if (person.isSpeaking) {
+			var topicY = person.angles[10]-130;
+
+			// If only one topic
+			if (person.topic2 == -1) {
+				var topicX = -107;
+				if (person.facingRight) {
+					topicX = -5;
+				}
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX+8, person.y+topicY, peopleLoc[2], peopleLoc[3]);
+
+			// If two topics
+			} else {
+				var topicX = -115;
+				if (person.facingRight) {
+					topicX = -8;
+				}
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX,    person.y+topicY, peopleLoc[2], peopleLoc[3]);
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX+23, person.y+topicY, peopleLoc[2], peopleLoc[3]);
+
+			}
+
+		}
 
 	}
 
@@ -590,88 +751,24 @@
 			// Save this current canvas setting
 			ctx.save();
 
-			// Draw flipped if needed
-			if (!people[i].facingRight){
-				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
-				ctx.scale(-1, 1);
-			} else {
-				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
-			}
-
-			// Overall/torso rotation
-			ctx.rotate(people[i].angles[9]*toRad);
-
-			// Right arm
-			ctx.translate(9, -30);
-			ctx.rotate(people[i].angles[3]*toRad);
-			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(2, 20);
-			ctx.rotate(people[i].angles[4]*toRad);
-			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[4]*toRad);
-			ctx.translate(-2, -20);
-			ctx.rotate(-people[i].angles[3]*toRad);
-			ctx.translate(-9, 30);
-			
-			// Right leg
-			ctx.translate(6, 3);
-			ctx.rotate(people[i].angles[7]*toRad);
-			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 25);
-			ctx.rotate(people[i].angles[8]*toRad);
-			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[8]*toRad);
-			ctx.translate(-1, -25);
-			ctx.rotate(-people[i].angles[7]*toRad);
-			ctx.translate(-6, -3);
-
-			// Torso
-			ctx.drawImage(peopleSVG, peopleLoc[2],   people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-
-			// Head
-			if (people[i].facingRight != people[i].headRight){
-				ctx.scale(-1, 1);
-			} 
-			ctx.translate(0, -40);
-			ctx.rotate(people[i].angles[0]*toRad);
-			ctx.drawImage(peopleSVG, 0,              people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[0]*toRad);
-			ctx.translate(0, 40);
-			if (people[i].facingRight != people[i].headRight){
-				ctx.scale(-1, 1);
-			} 
-
-			// Left leg
-			ctx.translate(-6, 3);
-			ctx.rotate(people[i].angles[5]*toRad);
-			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 25);
-			ctx.rotate(people[i].angles[6]*toRad);
-			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[6]*toRad);
-			ctx.translate(-1, -25);
-			ctx.rotate(-people[i].angles[5]*toRad);
-			ctx.translate(6, -3);
-
-			// Left arm
-			ctx.translate(-11, -30);
-			ctx.rotate(people[i].angles[1]*toRad);
-			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 20);
-			ctx.rotate(people[i].angles[2]*toRad);
-			if (people[i].holding >= 0) {
-				ctx.translate(0, 22);
-				ctx.drawImage(objectsSVG, drinkX, people[i].holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
-				ctx.translate(0, -22);
-			}
-			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[2]*toRad);
-			ctx.translate(-1, -20);
-			ctx.rotate(-people[i].angles[1]*toRad);
-			ctx.translate(11, 30);
+			// Draw this person
+			drawPerson(people[i]);
 
 			// Return to prev state
 			ctx.restore();
+
+		}
+
+		// Speech bubbles of people sat down
+		for (var i=0; i<people.length; i++) {
+
+			// If they're not sat, skip the draw
+			if (people[i].action != "sitting" && people[i].action != "sittingHolding") {
+				continue;
+			}
+
+			// Draw the bubble
+			drawBubble(people[i]);
 
 		}
 
@@ -686,126 +783,24 @@
 			// Save this current canvas setting
 			ctx.save();
 
-			// Draw flipped if needed
-			if (!people[i].facingRight){
-				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
-				ctx.scale(-1, 1);
-			} else {
-				ctx.translate(people[i].x, people[i].y+people[i].angles[10]);
-			}
-
-			// Overall/torso rotation
-			ctx.rotate(people[i].angles[9]*toRad);
-
-			// Right arm
-			ctx.translate(9, -30);
-			ctx.rotate(people[i].angles[3]*toRad);
-			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(2, 20);
-			ctx.rotate(people[i].angles[4]*toRad);
-			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[4]*toRad);
-			ctx.translate(-2, -20);
-			ctx.rotate(-people[i].angles[3]*toRad);
-			ctx.translate(-9, 30);
-			
-			// Right leg
-			ctx.translate(6, 3);
-			ctx.rotate(people[i].angles[7]*toRad);
-			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 25);
-			ctx.rotate(people[i].angles[8]*toRad);
-			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[8]*toRad);
-			ctx.translate(-1, -25);
-			ctx.rotate(-people[i].angles[7]*toRad);
-			ctx.translate(-6, -3);
-
-			// Torso
-			ctx.drawImage(peopleSVG, peopleLoc[2],   people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-
-			// Head
-			if (people[i].facingRight != people[i].headRight){
-				ctx.scale(-1, 1);
-			} 
-			ctx.translate(0, -40);
-			ctx.rotate(people[i].angles[0]*toRad);
-			ctx.drawImage(peopleSVG, 0,              people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[0]*toRad);
-			ctx.translate(0, 40);
-			if (people[i].facingRight != people[i].headRight){
-				ctx.scale(-1, 1);
-			} 
-
-			// Left leg
-			ctx.translate(-6, 3);
-			ctx.rotate(people[i].angles[5]*toRad);
-			ctx.drawImage(peopleSVG, 4*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 25);
-			ctx.rotate(people[i].angles[6]*toRad);
-			ctx.drawImage(peopleSVG, 5*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[6]*toRad);
-			ctx.translate(-1, -25);
-			ctx.rotate(-people[i].angles[5]*toRad);
-			ctx.translate(6, -3);
-
-			// Left arm
-			ctx.translate(-11, -30);
-			ctx.rotate(people[i].angles[1]*toRad);
-			ctx.drawImage(peopleSVG, 2*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.translate(1, 20);
-			ctx.rotate(people[i].angles[2]*toRad);
-			if (people[i].holding >= 0) {
-				ctx.translate(0, 22);
-				ctx.drawImage(objectsSVG, drinkX, people[i].holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
-				ctx.translate(0, -22);
-			}
-			ctx.drawImage(peopleSVG, 3*peopleLoc[2], people[i].sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-			ctx.rotate(-people[i].angles[2]*toRad);
-			ctx.translate(-1, -20);
-			ctx.rotate(-people[i].angles[1]*toRad);
-			ctx.translate(11, 30);
+			// Draw this person
+			drawPerson(people[i]);
 
 			// Return to prev state
 			ctx.restore();
 
 		}
+
 		// Draw the speech bubbles
 		for (var i=0; i<people.length; i++) {
 
-			// If saying something, draw the speech bubble TODO
-			if (people[i].isSpeaking) {
-				if (people[i].facingRight) {
-					ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+5, people[i].y+people[i].angles[10]-130, peopleLoc[2], peopleLoc[3]);
-	 			} else {
-					ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x-100, people[i].y+people[i].angles[10]-130, peopleLoc[2], peopleLoc[3]);
-				}
+			// If they're hidden or sat, skip the draw
+			if (people[i].inBathroom || people[i].action == "sitting" || people[i].action == "sittingHolding") {
+				continue;
 			}
 
-			// Add the topics with flipping
-			if (people[i].isSpeaking) {
-				var topicY = people[i].angles[10]-130;
-
-				// If only one topic
-				if (people[i].topic2 == -1) {
-					var topicX = -107;
-					if (people[i].facingRight) {
-						topicX = -5;
-					}
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+8, people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
-
-				// If two topics
-				} else {
-					var topicX = -113;
-					if (people[i].facingRight) {
-						topicX = -6;
-					}
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX,    people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
-					ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], people[i].topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], people[i].x+topicX+20, people[i].y+topicY, peopleLoc[2], peopleLoc[3]);
-
-				}
-
-			}
+			// Draw the bubble
+			drawBubble(people[i]);
 
 		}
 
@@ -813,8 +808,9 @@
 		ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width, placesSVG.height);
 
 		// Write the DEBUG text
-		ctx.font = "14px Arial";
-		ctx.fillText(debugText, 10, 450);
+		/*ctx.font = "14px Arial";*/
+		/*ctx.fillStyle = "white";*/
+		/*ctx.fillText(debugText, 10, 450);*/
 
 	}
 
