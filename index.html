@@ -29,14 +29,15 @@
 	var peopleSVG = new Image();
 	var objectsSVG = new Image();
 	var placesSVG = new Image();
+	var seatedSVG = new Image();
 	var overlaySVG = new Image();
 
 	// SVG sizings
 	var placeLoc = [0, 0, 500, 250];
 	var objectLoc = [0, 0, 100, 100];
 	var peopleLoc = [0, 0, 100, 100];
-	var placeWidth = 0;
-	var placeHeight = 0;
+	var placeWidth = 500;
+	var placeHeight = 250;
 
 	// For converting
 	var toRad = Math.PI / 180.0;
@@ -65,9 +66,12 @@
 	// Timings
 	var lastRender = 0;
 
-	// DOM objects
-	var canvasObj;
+	// Canvas stuff
+	var canvas;
 	var ctx;
+	var tempCanv;
+	var tempCtx;
+	var scaleFactor = 1;
 
 	// Keep track of all the people
 	var people = [];
@@ -90,7 +94,7 @@
 
 	// Locations around the scene
 	var locBathroom = 70;
-	var locBin = 530;
+	var locBin = 525;
 	var locFridge = 460;
 	var numInBathroom = 0;
 
@@ -142,7 +146,7 @@
 
 		// Preload the SVGs
 		var imagesLoaded = 0;
-		var imagesToLoad = 4;
+		var imagesToLoad = 5;
 
 		// When the images are loaded, check if all are done
 		peopleSVG.onload = function() {
@@ -157,6 +161,10 @@
 			imagesLoaded++;
 			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
 		};
+		seatedSVG.onload = function() {
+			imagesLoaded++;
+			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
+		};
 		overlaySVG.onload = function() {
 			imagesLoaded++;
 			if (imagesLoaded == imagesToLoad) {afterAllSVGLoad();}
@@ -166,6 +174,7 @@
 		overlaySVG.src = "overlay.svg";
 		peopleSVG.src = "people.svg";
 		placesSVG.src = "places.svg";
+		seatedSVG.src = "seated.svg";
 		objectsSVG.src = "objects.svg";
 
 	}
@@ -173,15 +182,21 @@
 	// Called after all of the SVGs are loaded
 	function afterAllSVGLoad() {
 
-		// Get the canvas
+		// Get the main canvas
 		canvas = document.getElementById("main");
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
-		ctx = canvas.getContext("2d", {alpha: false});
-		ctx.scale(canvas.width / placesSVG.width, canvas.width / placesSVG.width);
+		ctx = canvas.getContext("2d");
+		scaleFactor = canvas.width / placesSVG.width; 
+
+		// Create a temp canvas for drawing the people first
+		tempCanv = document.createElement('canvas');
+		tempCanv.width = 80*scaleFactor;
+		tempCanv.height = 135*scaleFactor;
+		tempCtx = tempCanv.getContext("2d");
 
 		// Add people
-		for (var i=peopleYMin; i<peopleYMax; i++) {
+		for (var i=peopleYMin; i<5; i++) {
 			people.push(JSON.parse(JSON.stringify(personTemplate)));
 			people[people.length-1].sprite = i;
 			people[people.length-1].loc = Math.floor(Math.random() * 700) + 20;
@@ -405,14 +420,14 @@
 
 			// Update Y based on X TODO
 			if (people[i].loc > 700) {
-				people[i].x = Math.round(people[i].loc)-700;
-				people[i].y = 340;
+				people[i].x = scaleFactor*(Math.round(people[i].loc)-700);
+				people[i].y = scaleFactor*340;
 			} else if (people[i].loc > 440) {
-				people[i].x = Math.round(people[i].loc)-240;
-				people[i].y = 340;
+				people[i].x = scaleFactor*(Math.round(people[i].loc)-240);
+				people[i].y = scaleFactor*340;
 			} else {
-				people[i].x = Math.round(people[i].loc);
-				people[i].y = 133;
+				people[i].x = scaleFactor*Math.round(people[i].loc);
+				people[i].y = scaleFactor*133;
 			}
 
 			// Move towards their pose
@@ -462,7 +477,7 @@
 
 				// Calculate the delta needed each frame between these poses
 				for (var j=0; j<10; j++) {
-					people[i].angleDeltas[j] = (poses[people[i].pose][j] - poses[oldPose][j]) / 20.0;
+					people[i].angleDeltas[j] = (poses[people[i].pose][j] - poses[oldPose][j]) / 17.0;
 				}
 				people[i].angleDeltas[10] = (poses[people[i].pose][10] - poses[oldPose][10]) / 20.0;
 
@@ -610,103 +625,114 @@
 	// Draw a single person
 	function drawPerson(person) {
 
-		// Draw flipped if needed TODO perf, maybe parallel
+		// Reset this temp canvas
+		tempCtx.clearRect(0, 0, tempCanv.width, tempCanv.height);
+		tempCtx.save()
+
+		// Want to draw relative to the centre
+		tempCtx.translate(tempCanv.width / 2, tempCanv.height / 2);
+
+		// Draw flipped if needed
+		tempCtx.scale(scaleFactor, scaleFactor);
 		if (!person.facingRight){
-			ctx.translate(person.x, person.y+person.angles[10]);
-			ctx.scale(-1, 1);
-		} else {
-			ctx.translate(person.x, person.y+person.angles[10]);
+			tempCtx.scale(-1, 1);
 		}
 
 		// Overall/torso rotation
-		ctx.rotate(person.angles[9]*toRad);
+		tempCtx.rotate(person.angles[9]*toRad);
 
 		// Right arm
-		ctx.translate(9, -30);
-		ctx.rotate(person.angles[3]*toRad);
-		ctx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.translate(2, 20);
-		ctx.rotate(person.angles[4]*toRad);
-		ctx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.rotate(-person.angles[4]*toRad);
-		ctx.translate(-2, -20);
-		ctx.rotate(-person.angles[3]*toRad);
-		ctx.translate(-9, 30);
+		tempCtx.translate(9, -30);
+		tempCtx.rotate(person.angles[3]*toRad);
+		tempCtx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.translate(2, 20);
+		tempCtx.rotate(person.angles[4]*toRad);
+		tempCtx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.rotate(-person.angles[4]*toRad);
+		tempCtx.translate(-2, -20);
+		tempCtx.rotate(-person.angles[3]*toRad);
+		tempCtx.translate(-9, 30);
 		
 		// Right leg
-		ctx.translate(6, 3);
-		ctx.rotate(person.angles[7]*toRad);
-		ctx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.translate(1, 25);
-		ctx.rotate(person.angles[8]*toRad);
-		ctx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.rotate(-person.angles[8]*toRad);
-		ctx.translate(-1, -25);
-		ctx.rotate(-person.angles[7]*toRad);
-		ctx.translate(-6, -3);
+		tempCtx.translate(6, 3);
+		tempCtx.rotate(person.angles[7]*toRad);
+		tempCtx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.translate(1, 25);
+		tempCtx.rotate(person.angles[8]*toRad);
+		tempCtx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.rotate(-person.angles[8]*toRad);
+		tempCtx.translate(-1, -25);
+		tempCtx.rotate(-person.angles[7]*toRad);
+		tempCtx.translate(-6, -3);
 
 		// Torso
-		ctx.drawImage(peopleSVG, peopleLoc[2],   person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, peopleLoc[2],   person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
 
 		// Head
 		if (person.facingRight != person.headRight){
-			ctx.scale(-1, 1);
+			tempCtx.scale(-1, 1);
 		} 
-		ctx.translate(0, -40);
-		ctx.rotate(person.angles[0]*toRad);
-		ctx.drawImage(peopleSVG, 0,              person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.rotate(-person.angles[0]*toRad);
-		ctx.translate(0, 40);
+		tempCtx.translate(0, -40);
+		tempCtx.rotate(person.angles[0]*toRad);
+		tempCtx.drawImage(peopleSVG, 0,              person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.rotate(-person.angles[0]*toRad);
+		tempCtx.translate(0, 40);
 		if (person.facingRight != person.headRight){
-			ctx.scale(-1, 1);
+			tempCtx.scale(-1, 1);
 		} 
 
 		// Left leg
-		ctx.translate(-6, 3);
-		ctx.rotate(person.angles[5]*toRad);
-		ctx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.translate(1, 25);
-		ctx.rotate(person.angles[6]*toRad);
-		ctx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.rotate(-person.angles[6]*toRad);
-		ctx.translate(-1, -25);
-		ctx.rotate(-person.angles[5]*toRad);
-		ctx.translate(6, -3);
+		tempCtx.translate(-6, 3);
+		tempCtx.rotate(person.angles[5]*toRad);
+		tempCtx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.translate(1, 25);
+		tempCtx.rotate(person.angles[6]*toRad);
+		tempCtx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.rotate(-person.angles[6]*toRad);
+		tempCtx.translate(-1, -25);
+		tempCtx.rotate(-person.angles[5]*toRad);
+		tempCtx.translate(6, -3);
 
 		// Left arm
-		ctx.translate(-11, -30);
-		ctx.rotate(person.angles[1]*toRad);
-		ctx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.translate(1, 20);
-		ctx.rotate(person.angles[2]*toRad);
+		tempCtx.translate(-11, -30);
+		tempCtx.rotate(person.angles[1]*toRad);
+		tempCtx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.translate(1, 20);
+		tempCtx.rotate(person.angles[2]*toRad);
 		if (person.holding >= 0) {
-			ctx.translate(0, 22);
-			ctx.drawImage(objectsSVG, drinkX, person.holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
-			ctx.translate(0, -22);
+			tempCtx.translate(0, 22);
+			tempCtx.drawImage(objectsSVG, drinkX, person.holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
+			tempCtx.translate(0, -22);
 		}
-		ctx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
-		ctx.rotate(-person.angles[2]*toRad);
-		ctx.translate(-1, -20);
-		ctx.rotate(-person.angles[1]*toRad);
-		ctx.translate(11, 30);
+		tempCtx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.rotate(-person.angles[2]*toRad);
+		tempCtx.translate(-1, -20);
+		tempCtx.rotate(-person.angles[1]*toRad);
+		tempCtx.translate(11, 30);
+
+		// Then draw this to the main canvas
+		ctx.drawImage(tempCanv, person.x-tempCanv.width/2, person.y-tempCanv.height/2+person.angles[10]);
+
+		// Restore the canvas to it's original transform
+		tempCtx.restore()
 
 	}
 
 	// Draw a single person's speech bubble
 	function drawBubble(person) {
 
-		// If saying something, draw the speech bubble
+		// If saying something
 		if (person.isSpeaking) {
-			if (person.facingRight) {
-				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+5, person.y+person.angles[10]-130, peopleLoc[2], peopleLoc[3]);
-			} else {
-				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x-100, person.y+person.angles[10]-130, peopleLoc[2], peopleLoc[3]);
-			}
-		}
 
-		// Add the topics with flipping
-		if (person.isSpeaking) {
-			var topicY = person.angles[10]-130;
+			// The y location of everything
+			var topicY = scaleFactor*(person.angles[10]-130);
+
+			// The bubble
+			if (person.facingRight) {
+				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+5*scaleFactor, person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
+			} else {
+				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x-100*scaleFactor, person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
+			}
 
 			// If only one topic
 			if (person.topic2 == -1) {
@@ -714,16 +740,16 @@
 				if (person.facingRight) {
 					topicX = -5;
 				}
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX+8, person.y+topicY, peopleLoc[2], peopleLoc[3]);
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*(topicX+8), person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
 
 			// If two topics
 			} else {
-				var topicX = -115;
+				var topicX = -113;
 				if (person.facingRight) {
-					topicX = -8;
+					topicX = -9;
 				}
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX,    person.y+topicY, peopleLoc[2], peopleLoc[3]);
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+topicX+23, person.y+topicY, peopleLoc[2], peopleLoc[3]);
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*topicX,    person.y+topicY, scaleFactor*peopleLoc[2], scaleFactor*peopleLoc[3]);
+				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*(topicX+23), person.y+topicY, scaleFactor*peopleLoc[2], scaleFactor*peopleLoc[3]);
 
 			}
 
@@ -738,7 +764,7 @@
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		// Draw the background
-		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width, placesSVG.height);
+		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
 
 		// Draw the people sat down
 		for (var i=0; i<people.length; i++) {
@@ -748,14 +774,8 @@
 				continue;
 			}
 
-			// Save this current canvas setting
-			ctx.save();
-
 			// Draw this person
 			drawPerson(people[i]);
-
-			// Return to prev state
-			ctx.restore();
 
 		}
 
@@ -772,6 +792,9 @@
 
 		}
 
+		// Draw the middle layer
+		ctx.drawImage(seatedSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
+
 		// Draw the people stood up 
 		for (var i=0; i<people.length; i++) {
 
@@ -780,14 +803,8 @@
 				continue;
 			}
 
-			// Save this current canvas setting
-			ctx.save();
-
 			// Draw this person
 			drawPerson(people[i]);
-
-			// Return to prev state
-			ctx.restore();
 
 		}
 
@@ -805,7 +822,7 @@
 		}
 
 		// Draw the foreground
-		ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width, placesSVG.height);
+		ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
 
 		// Write the DEBUG text
 		/*ctx.font = "14px Arial";*/
