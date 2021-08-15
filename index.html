@@ -13,6 +13,19 @@
 		max-height: 700px;
 		-webkit-transform: translate(-50%, -50%);
 		transform: translate(-50%, -50%);
+		text-align: center;
+	}
+
+	canvas, img {
+		image-rendering: crisp-edges;
+	}
+
+	button {
+		padding: 10px;
+		padding-top: 5px;
+		padding-bottom: 5px;
+		margin-bottom: 10px;
+		font-size: 1.2em;
 	}
 	
 	#main {
@@ -38,6 +51,8 @@
 	var peopleLoc = [0, 0, 100, 100];
 	var placeWidth = 500;
 	var placeHeight = 250;
+	var spriteWidth = 100;
+	var spriteHeight = 100;
 
 	// For converting
 	var toRad = Math.PI / 180.0;
@@ -58,9 +73,9 @@
 		"walkHold2":       [0,  0, -90,  0,  0, -20,  10,  20,  10, 0,   0],
 		"walkHold3":       [0,  0, -90,  0,  0,  10,  10, -35,  35, 0,   0],
 		"walkHold4":       [0,  0, -90,  0,  0,  10,  10, -20,  10, 0,   0],
-		"sitting":         [0,  0, -20,-00,-20, -80,  80, -80,  80, 0,  33],
-		"sittingHolding":  [0,  0, -90,-00,-20, -80,  80, -80,  80, 0,  33],
-		"sittingDrinking": [0,-50,-100,-00,-20, -80,  80, -80,  80, 0,  33],
+		"sitting":         [0,  0, -20,-00,-20, -80,  80, -80,  80, 0,  31],
+		"sittingHolding":  [0,  0, -90,-00,-20, -80,  80, -80,  80, 0,  31],
+		"sittingDrinking": [0,-50,-100,-00,-20, -80,  80, -80,  80, 0,  31],
 	};
 
 	// Timings
@@ -76,6 +91,9 @@
 	// Keep track of all the people
 	var people = [];
 	var numInBathroom = 0;
+
+	// Performance settings
+	var onlyLivingRoom = false;
 
 	// Possible conversation locations
 	var conversations = [
@@ -97,7 +115,7 @@
 	var locBathroom = 70;
 	var locBin = 520;
 	var locFridge = 460;
-	var locWine = 120;
+	var locWine = 135;
 	var locKitchenStart = 440;
 	var locBalcStart = 700;
 	var locBalcDoorInside = 400;
@@ -149,8 +167,15 @@
 						  "holding": -1, 
 						  "action": "standing"};
 
-	// For debugging
-	var debugText = "";
+	// Triggers if pressing the hide living room button
+	function toggleOnlyLiving() {
+		onlyLivingRoom = !onlyLivingRoom;
+		if (onlyLivingRoom) {
+			document.getElementById("toggleOnlyLiving").innerHTML = "show the whole flat (slower)";
+		} else {
+			document.getElementById("toggleOnlyLiving").innerHTML = "show only the living room (faster)";
+		}
+	}
 
 	// Called when the page loads
 	function init() {
@@ -198,6 +223,12 @@
 		canvas.width = canvas.offsetWidth;
 		canvas.height = canvas.offsetHeight;
 		ctx = canvas.getContext("2d");
+		ctx.mozImageSmoothingEnabled = false;
+		ctx.oImageSmoothingEnabled = false;
+		ctx.webkitImageSmoothingEnabled = false;
+		ctx.imageSmoothingEnabled = false;
+
+		// Set the scaling of everything
 		scaleFactor = canvas.width / placesSVG.width; 
 
 		// Create a temp canvas for drawing the people first
@@ -205,6 +236,10 @@
 		tempCanv.width = 80*scaleFactor;
 		tempCanv.height = 135*scaleFactor;
 		tempCtx = tempCanv.getContext("2d");
+		tempCtx.mozImageSmoothingEnabled = false;
+		tempCtx.oImageSmoothingEnabled = false;
+		tempCtx.webkitImageSmoothingEnabled = false;
+		tempCtx.imageSmoothingEnabled = false;
 
 		// Add people
 		for (var i=peopleYMin; i<peopleYMax; i++) {
@@ -586,7 +621,7 @@
 				for (var j=0; j<10; j++) {
 					people[i].angleDeltas[j] = (poses[people[i].pose][j] - poses[oldPose][j]) / 17.0;
 				}
-				people[i].angleDeltas[10] = (poses[people[i].pose][10] - poses[oldPose][10]) / 20.0;
+				people[i].angleDeltas[10] = (poses[people[i].pose][10] - poses[oldPose][10]) / 17.0;
 
 			}
 
@@ -726,22 +761,6 @@
 
 		}
 
-		// DEBUG
-		debugText = "";
-		debugText += "action = " + people[0].action + "  "; 
-		debugText += "pose = " + people[0].pose + "  "; 
-		/*debugText += "boredom = " + people[0].boredom.toFixed(1) + "  ";*/
-		/*debugText += "bladder = " + people[0].bladder.toFixed(1) + "  ";*/
-		/*debugText += "drinkTimer = " + people[0].drinkTimer.toFixed(1) + "  ";*/
-		/*debugText += "drinLeft = " + people[0].drinkLeft.toFixed(1) + "  ";*/
-		/*debugText += "convo = " + people[0].conversationInd + "  ";*/
-		/*if (people[0].conversationInd >= 0) {*/
-			/*debugText += "speaking = " + conversations[people[0].conversationInd].speaking + "  ";*/
-		/*} else {*/
-			/*debugText += "speaking = " + -1 + "  ";*/
-		/*}*/
-		/*debugText += "speechTimer = " + people[0].speechTimer.toFixed(2) + "  ";*/
-
 	}
 
 	// Draw a single person
@@ -766,10 +785,10 @@
 		// Right arm
 		tempCtx.translate(9, -30);
 		tempCtx.rotate(person.angles[3]*toRad);
-		tempCtx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 2*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.translate(2, 20);
 		tempCtx.rotate(person.angles[4]*toRad);
-		tempCtx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 3*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.rotate(-person.angles[4]*toRad);
 		tempCtx.translate(-2, -20);
 		tempCtx.rotate(-person.angles[3]*toRad);
@@ -778,17 +797,17 @@
 		// Right leg
 		tempCtx.translate(6, 3);
 		tempCtx.rotate(person.angles[7]*toRad);
-		tempCtx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 4*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.translate(1, 25);
 		tempCtx.rotate(person.angles[8]*toRad);
-		tempCtx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 5*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.rotate(-person.angles[8]*toRad);
 		tempCtx.translate(-1, -25);
 		tempCtx.rotate(-person.angles[7]*toRad);
 		tempCtx.translate(-6, -3);
 
 		// Torso
-		tempCtx.drawImage(peopleSVG, peopleLoc[2],   person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, spriteWidth,   person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 
 		// Head
 		if (person.facingRight != person.headRight){
@@ -796,7 +815,7 @@
 		} 
 		tempCtx.translate(0, -40);
 		tempCtx.rotate(person.angles[0]*toRad);
-		tempCtx.drawImage(peopleSVG, 0,              person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 0,              person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.rotate(-person.angles[0]*toRad);
 		tempCtx.translate(0, 40);
 		if (person.facingRight != person.headRight){
@@ -806,10 +825,10 @@
 		// Left leg
 		tempCtx.translate(-6, 3);
 		tempCtx.rotate(person.angles[5]*toRad);
-		tempCtx.drawImage(peopleSVG, 4*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 4*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.translate(1, 25);
 		tempCtx.rotate(person.angles[6]*toRad);
-		tempCtx.drawImage(peopleSVG, 5*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 5*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.rotate(-person.angles[6]*toRad);
 		tempCtx.translate(-1, -25);
 		tempCtx.rotate(-person.angles[5]*toRad);
@@ -818,7 +837,7 @@
 		// Left arm
 		tempCtx.translate(-11, -30);
 		tempCtx.rotate(person.angles[1]*toRad);
-		tempCtx.drawImage(peopleSVG, 2*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 2*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.translate(1, 20);
 		tempCtx.rotate(person.angles[2]*toRad);
 		if (person.holding >= 0) {
@@ -826,14 +845,14 @@
 			tempCtx.drawImage(objectsSVG, drinkX, person.holding*objectLoc[3], objectLoc[2], objectLoc[3], -objectLoc[2]/2, -objectLoc[3]/2, objectLoc[2], objectLoc[3]);
 			tempCtx.translate(0, -22);
 		}
-		tempCtx.drawImage(peopleSVG, 3*peopleLoc[2], person.sprite*peopleLoc[3], peopleLoc[2], peopleLoc[3], -peopleLoc[2]/2, -peopleLoc[3]/2, peopleLoc[2], peopleLoc[3]);
+		tempCtx.drawImage(peopleSVG, 3*spriteWidth, person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
 		tempCtx.rotate(-person.angles[2]*toRad);
 		tempCtx.translate(-1, -20);
 		tempCtx.rotate(-person.angles[1]*toRad);
 		tempCtx.translate(11, 30);
 
 		// Then draw this to the main canvas
-		ctx.drawImage(tempCanv, person.x-tempCanv.width/2, person.y-tempCanv.height/2+person.angles[10]);
+		ctx.drawImage(tempCanv, Math.round(person.x-tempCanv.width/2), Math.round(person.y-tempCanv.height/2+person.angles[10]));
 
 		// Restore the canvas to it's original transform
 		tempCtx.restore()
@@ -851,9 +870,9 @@
 
 			// The bubble
 			if (person.facingRight) {
-				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleRightY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+5*scaleFactor, person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
+				ctx.drawImage(objectsSVG, bubbleX*spriteWidth, bubbleRightY*spriteHeight, spriteWidth, spriteHeight, person.x+5*scaleFactor, person.y+topicY, spriteWidth*scaleFactor, spriteHeight*scaleFactor);
 			} else {
-				ctx.drawImage(objectsSVG, bubbleX*peopleLoc[2], bubbleLeftY*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x-100*scaleFactor, person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
+				ctx.drawImage(objectsSVG, bubbleX*spriteWidth, bubbleLeftY*spriteHeight, spriteWidth, spriteHeight, person.x-100*scaleFactor, person.y+topicY, spriteWidth*scaleFactor, spriteHeight*scaleFactor);
 			}
 
 			// If only one topic
@@ -862,16 +881,16 @@
 				if (person.facingRight) {
 					topicX = -5;
 				}
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*(topicX+8), person.y+topicY, peopleLoc[2]*scaleFactor, peopleLoc[3]*scaleFactor);
+				ctx.drawImage(objectsSVG, symbolX*spriteWidth, person.topic1*spriteHeight, spriteWidth, spriteHeight, person.x+scaleFactor*(topicX+8), person.y+topicY, spriteWidth*scaleFactor, spriteHeight*scaleFactor);
 
 			// If two topics
 			} else {
-				var topicX = -113;
+				var topicX = -115;
 				if (person.facingRight) {
 					topicX = -8;
 				}
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic1*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*topicX,    person.y+topicY, scaleFactor*peopleLoc[2], scaleFactor*peopleLoc[3]);
-				ctx.drawImage(objectsSVG, symbolX*peopleLoc[2], person.topic2*peopleLoc[3], peopleLoc[2], peopleLoc[3], person.x+scaleFactor*(topicX+23), person.y+topicY, scaleFactor*peopleLoc[2], scaleFactor*peopleLoc[3]);
+				ctx.drawImage(objectsSVG, symbolX*spriteWidth, person.topic1*spriteHeight, spriteWidth, spriteHeight, person.x+scaleFactor*topicX,    person.y+topicY, scaleFactor*spriteWidth, scaleFactor*spriteHeight);
+				ctx.drawImage(objectsSVG, symbolX*spriteWidth, person.topic2*spriteHeight, spriteWidth, spriteHeight, person.x+scaleFactor*(topicX+23), person.y+topicY, scaleFactor*spriteWidth, scaleFactor*spriteHeight);
 
 			}
 
@@ -886,13 +905,22 @@
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 		// Draw the background
-		ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
+		if (!onlyLivingRoom) {
+			ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
+		} else {
+			ctx.drawImage(placesSVG, 0, 0, placesSVG.width, placesSVG.height/2, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor/2);
+		}
 
 		// Draw the people sat down
 		for (var i=0; i<people.length; i++) {
 
 			// If they're not sat, skip the draw
 			if (people[i].action != "sitting" && people[i].action != "sittingHolding") {
+				continue;
+			}
+
+			// If told to only draw the living room
+			if (onlyLivingRoom && people[i].loc > locKitchenStart) {
 				continue;
 			}
 
@@ -906,6 +934,11 @@
 
 			// If they're not sat, skip the draw
 			if (people[i].action != "sitting" && people[i].action != "sittingHolding") {
+				continue;
+			}
+
+			// If told to only draw the living room
+			if (onlyLivingRoom && people[i].loc > locKitchenStart) {
 				continue;
 			}
 
@@ -925,6 +958,11 @@
 				continue;
 			}
 
+			// If told to only draw the living room
+			if (onlyLivingRoom && people[i].loc > locKitchenStart) {
+				continue;
+			}
+
 			// Draw this person
 			drawPerson(people[i]);
 
@@ -938,18 +976,20 @@
 				continue;
 			}
 
+			// If told to only draw the living room
+			if (onlyLivingRoom && people[i].loc > locKitchenStart) {
+				continue;
+			}
+
 			// Draw the bubble
 			drawBubble(people[i]);
 
 		}
 
 		// Draw the foreground
-		ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
-
-		// Write the DEBUG text
-		/*ctx.font = "14px Arial";*/
-		/*ctx.fillStyle = "white";*/
-		/*ctx.fillText(debugText, 10, 450);*/
+		if (!onlyLivingRoom) {
+			ctx.drawImage(overlaySVG, 0, 0, placesSVG.width, placesSVG.height, 0, 0, placesSVG.width*scaleFactor, placesSVG.height*scaleFactor);
+		}
 
 	}
 
@@ -975,6 +1015,7 @@
 
 <body onload="init();">
 	<div id="wrapper">
+		<button id="toggleOnlyLiving" onclick="toggleOnlyLiving();">show only the living room (faster)</button>
 		<canvas id="main"/>
 	</div>
 </body>
