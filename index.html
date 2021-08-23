@@ -76,11 +76,11 @@
 		"drinking":        [0,-50,-100,  0,  0,   0,   0,   0,   0, 0,   0],
 		"walk1":           [0,  0,   0,  0,  0, -30,  40,  10,   5, 0,   0],
 		"walk2":           [0,  0,   0,  0,  0, -20,  10,  20,  10, 0,   0],
-		"walk3":           [0,  0,   0,  0,  0,  10,  10, -35,  35, 0,   0],
+		"walk3":           [0,  0,   0,  0,  0,  10,  10, -30,  30, 0,   0],
 		"walk4":           [0,  0,   0,  0,  0,  10,  10, -20,  10, 0,   0],
 		"walkHold1":       [0,  0, -90,  0,  0, -30,  40,  10,   5, 0,   0],
 		"walkHold2":       [0,  0, -90,  0,  0, -20,  10,  20,  10, 0,   0],
-		"walkHold3":       [0,  0, -90,  0,  0,  10,  10, -35,  35, 0,   0],
+		"walkHold3":       [0,  0, -90,  0,  0,  10,  10, -30,  30, 0,   0],
 		"walkHold4":       [0,  0, -90,  0,  0,  10,  10, -20,  10, 0,   0],
 		"sitting":         [0,  0, -20,-00,-20, -80,  80, -80,  80, 0,  19],
 		"sittingHolding":  [0,  0, -90,-00,-20, -80,  80, -80,  80, 0,  19],
@@ -101,6 +101,7 @@
 	// Keep track of all the people
 	var people = [];
 	var numInBathroom = 0;
+	var moveSpeed = 1.3;
 
 	// Performance settings
 	var onlyLivingRoom = false;
@@ -172,6 +173,7 @@
 						  "nextDrink": "beer", 
 						  "headTimer": 0, 
 						  "bladder": 0, 
+						  "speed": 1, 
 						  "drinkTimer": 0, 
 						  "speechTimer": 0, 
 						  "topic1": -1, 
@@ -193,6 +195,42 @@
 	// Called when the page loads
 	function init() {
 
+		// Reset things
+		people = [];
+		conversations = JSON.parse(JSON.stringify(conversationsBackup));
+		numInBathroom = 0;
+
+		// Add people
+		for (var i=peopleYMin; i<peopleYMax; i++) {
+			people.push(JSON.parse(JSON.stringify(personTemplate)));
+			people[people.length-1].sprite = i;
+			people[people.length-1].loc = Math.floor(Math.random() * 700) + 20;
+			people[people.length-1].destinationLoc = people[people.length-1].loc;
+			people[people.length-1].boredom = Math.floor(Math.random() * 20) + 80;
+			people[people.length-1].holding = Math.floor(Math.random() * (drinkYMax+1-drinkYMin)) + drinkYMin;
+			people[people.length-1].drinkLeft = Math.floor(Math.random() * 100);
+			people[people.length-1].speed = (Math.floor(Math.random() * 20) + 100) / 100.0;
+			people[people.length-1].action = "holding";
+			people[people.length-1].pose = "holding";
+			for (var j=0; j<11; j++) {
+				people[people.length-1].angles[j] = poses[people[people.length-1].pose][j];
+			}
+			people[people.length-1].bladder = Math.floor(Math.random() * 100);
+		}
+
+		// Run the sim for a bit to randomise things
+		for (var i=0; i<1000; i++) {
+			update(0);
+		}
+
+		// Start the SVG loading
+		loadSVGs();
+
+	}
+
+	// Called when the page loads or when the settings are changed
+	function loadSVGs() {
+
 		// Get the graphics setting
 		var val = document.getElementById("quality").value;
 		if (val == "low") {
@@ -200,11 +238,6 @@
 		} else if (val == "high") {
 			graphics = 2;
 		}
-
-		// Reset things
-		people = [];
-		conversations = JSON.parse(JSON.stringify(conversationsBackup));
-		numInBathroom = 0;
 
 		// Preload the SVGs
 		var imagesLoaded = 0;
@@ -261,7 +294,7 @@
 
 	// Triggers on graphics quality changing
 	function qualityChanged() {
-		init();
+		loadSVGs();
 	}
 
 	// Called after all of the SVGs are loaded
@@ -290,31 +323,7 @@
 		}
 		tempCtx = tempCanv.getContext("2d");
 
-		// Add people
-		for (var i=peopleYMin; i<peopleYMax; i++) {
-			people.push(JSON.parse(JSON.stringify(personTemplate)));
-			people[people.length-1].sprite = i;
-			people[people.length-1].loc = Math.floor(Math.random() * 700) + 20;
-			people[people.length-1].destinationLoc = people[people.length-1].loc;
-			people[people.length-1].boredom = Math.floor(Math.random() * 20) + 80;
-			people[people.length-1].holding = Math.floor(Math.random() * (drinkYMax+1-drinkYMin)) + drinkYMin;
-			people[people.length-1].drinkLeft = Math.floor(Math.random() * 100);
-			people[people.length-1].action = "holding";
-			people[people.length-1].pose = "holding";
-			for (var j=0; j<11; j++) {
-				people[people.length-1].angles[j] = poses[people[people.length-1].pose][j];
-			}
-			people[people.length-1].bladder = Math.floor(Math.random() * 100);
-		}
-
-		// Testing
-		/*people.push(JSON.parse(JSON.stringify(personTemplate)));*/
-		/*people[people.length-1].fixed = true;*/
-
-		// Run the sim for a bit to randomise things
-		for (var i=0; i<1000; i++) {
-			update(0);
-		}
+		
 
 		// Start the loop
 		if (loopId != null) {
@@ -570,11 +579,11 @@
 
 				// Move towards the balcony door
 				if (people[i].loc < locBalcDoorInside) {
-					people[i].loc += 1.3;
+					people[i].loc += moveSpeed*people[i].speed;
 					people[i].facingRight = true;
 					people[i].headRight = true;
 				} else if (people[i].loc > locBalcDoorInside) {
-					people[i].loc -= 1.3;
+					people[i].loc -= moveSpeed*people[i].speed;
 					people[i].facingRight = false;
 					people[i].headRight = false;
 				}
@@ -589,11 +598,11 @@
 
 				// Move towards the balcony door
 				if (people[i].loc < locBalcDoorOutside) {
-					people[i].loc += 1.3;
+					people[i].loc += moveSpeed*people[i].speed;
 					people[i].facingRight = true;
 					people[i].headRight = true;
 				} else if (people[i].loc > locBalcDoorOutside) {
-					people[i].loc -= 1.3;
+					people[i].loc -= moveSpeed*people[i].speed;
 					people[i].facingRight = false;
 					people[i].headRight = false;
 				}
@@ -606,11 +615,11 @@
 			// Otherwise just move towards the location
 			} else {
 				if (people[i].loc > people[i].destinationLoc) {
-					people[i].loc -= 1.3;
+					people[i].loc -= moveSpeed*people[i].speed;
 					people[i].facingRight = false;
 					people[i].headRight = false;
 				} else if (people[i].loc < people[i].destinationLoc) {
-					people[i].loc += 1.3;
+					people[i].loc += moveSpeed*people[i].speed;
 					people[i].facingRight = true;
 					people[i].headRight = true;
 				}
@@ -633,14 +642,14 @@
 			for (var j=0; j<10; j++) {
 				var delta = poses[people[i].pose][j] - people[i].angles[j];
 				maxDelta = Math.max(Math.abs(delta), maxDelta);
-				if (Math.abs(delta) > 1){
+				if (Math.abs(delta) > 0.1){
 					people[i].angles[j] += people[i].angleDeltas[j];
 				}
 			}
 			people[i].angles[10] += people[i].angleDeltas[10];
 
 			// See if the pose needs changing
-			if (Math.abs(maxDelta) < 2){
+			if (Math.abs(maxDelta) < 1){
 
 				// Save the old pose
 				var oldPose = people[i].pose;
@@ -840,7 +849,7 @@
 		}
 
 		// Overall/torso rotation
-		tempCtx.rotate(person.angles[9]*toRad);
+		/*tempCtx.rotate(person.angles[9]*toRad);*/
 
 		// Right arm
 		tempCtx.translate(9, -30);
@@ -874,9 +883,9 @@
 			tempCtx.scale(-1, 1);
 		} 
 		tempCtx.translate(0, -40);
-		tempCtx.rotate(person.angles[0]*toRad);
+		/*tempCtx.rotate(person.angles[0]*toRad);*/
 		tempCtx.drawImage(peopleSVG, 0,              person.sprite*spriteHeight, spriteWidth, spriteHeight, -spriteWidth/2, -spriteHeight/2, spriteWidth, spriteHeight);
-		tempCtx.rotate(-person.angles[0]*toRad);
+		/*tempCtx.rotate(-person.angles[0]*toRad);*/
 		tempCtx.translate(0, 40);
 		if (person.facingRight != person.headRight){
 			tempCtx.scale(-1, 1);
